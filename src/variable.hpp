@@ -5,7 +5,9 @@ class algebra::Variable {
         std::string name;
         Fraction exponent;
 
-        constexpr std::strong_ordering operator<=>(const Var&) const = default;
+        constexpr std::strong_ordering operator<=>(const Var& value) const {
+            return std::tuple(name, -exponent) <=> std::tuple(value.name, -value.exponent);
+        }
 
         constexpr bool operator==(const Var&) const = default;
     };
