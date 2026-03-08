@@ -3,12 +3,15 @@
 #include <assert.h>
 #include <cmath>
 #include <iostream>
+#include <map>
 #include <numeric>
 #include <ranges>
 #include <utility>
 #include <vector>
 
 namespace algebra {
+    using int128_t = __int128;
+
     enum class RelationalOperator { LT, LE, GT, GE, EQ };
 
     class Fraction;
@@ -27,16 +30,12 @@ namespace algebra {
     class Interval;
     std::ostream& operator<<(std::ostream&, const Interval&);
 
-    template <typename>
-    class Matrix;
-    template <typename T>
-    std::ostream& operator<<(std::ostream&, const Matrix<T>&);
-
     class Graph;
 
     namespace detail {
         RelationalOperator invert_relational_operator(RelationalOperator);
         bool evaluate_relational_operator(const Fraction&, RelationalOperator, const Fraction&);
+        std::vector<std::vector<int>> generate_combinations(int, int);
     } // namespace detail
 } // namespace algebra
 
@@ -62,11 +61,10 @@ namespace std {
     }
 } // namespace std
 
-#include "src/detail.hpp"
 #include "src/fraction.hpp"
+#include "src/detail.hpp"
 #include "src/variable.hpp"
 #include "src/polynomial.hpp"
 #include "src/inequation.hpp"
 #include "src/interval.hpp"
-#include "src/matrix.hpp"
 #include "src/graph.hpp"

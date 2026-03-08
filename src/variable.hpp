@@ -22,6 +22,8 @@ public:
 
     Variable(const Fraction& coefficient) : coefficient(coefficient) {}
 
+    Variable(const Fraction& coefficient, const std::string& name) : coefficient(coefficient), variables({{name, 1}}) {}
+
     Variable operator-() const {
         Variable res = *this;
         res.coefficient = -res.coefficient;

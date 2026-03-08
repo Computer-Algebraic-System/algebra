@@ -11,7 +11,7 @@ class algebra::Fraction {
         if (numerator == 0) {
             denominator = 1;
         } else {
-            const int gcd = std::gcd(numerator, denominator);
+            const int64_t gcd = std::gcd(numerator, denominator);
             numerator /= gcd;
             denominator /= gcd;
         }
@@ -20,12 +20,14 @@ class algebra::Fraction {
     constexpr bool infinity() const;
 
 public:
-    int numerator, denominator;
+    int64_t numerator, denominator;
 
     constexpr Fraction(const int numerator = 0, const int denominator = 1) : numerator(numerator), denominator(denominator) { simplify(); }
 
+    constexpr Fraction(const int64_t numerator, const int64_t denominator = 1) : numerator(numerator), denominator(denominator) { simplify(); }
+
     constexpr Fraction(double value) : numerator(0), denominator(1) {
-        while (static_cast<int>(value) != value) {
+        for (int i = 0; i < 9 && static_cast<int64_t>(value) != value; i++) {
             denominator *= 10;
             value *= 10;
         }
@@ -111,7 +113,7 @@ public:
     }
 
     constexpr std::strong_ordering operator<=>(const Fraction& value) const {
-        return static_cast<int64_t>(numerator) * value.denominator <=> static_cast<int64_t>(value.numerator) * denominator;
+        return static_cast<int128_t>(numerator) * value.denominator <=> static_cast<int128_t>(value.numerator) * denominator;
     }
 
     constexpr std::partial_ordering operator<=>(const double value) const { return static_cast<double>(*this) <=> value; }
@@ -123,7 +125,7 @@ public:
     constexpr explicit operator double() const { return static_cast<double>(numerator) / denominator; }
 };
 
-inline static constexpr algebra::Fraction inf = INT32_MAX;
+inline static constexpr algebra::Fraction inf = INT64_MAX;
 
 namespace std {
     inline algebra::Fraction abs(algebra::Fraction fraction) {

@@ -109,6 +109,8 @@ public:
         return res;
     }
 
+    std::map<Variable, Fraction> roots() const;
+
     Polynomial substitute(const std::vector<std::pair<std::string, Fraction>>& values) const {
         Polynomial res;
 
@@ -133,8 +135,6 @@ public:
 
     explicit operator Variable() const {
         assert(is_variable());
-
-
         return expression[0];
     }
 };

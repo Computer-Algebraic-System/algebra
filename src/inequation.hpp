@@ -10,6 +10,46 @@ public:
 
     Inequation(const Polynomial& polynomial, const RelationalOperator opr, const Polynomial& rhs) : opr(opr), lhs(polynomial), rhs(rhs) {}
 
+    Inequation& operator+=(const Fraction& value) { return *this += Polynomial(value); }
+
+    Inequation operator+(const Fraction& value) const { return *this + Polynomial(value); }
+
+    Inequation& operator+=(const Variable& value) { return *this += Polynomial(value); }
+
+    Inequation operator+(const Variable& value) const { return *this + Polynomial(value); }
+
+    Inequation& operator+=(const Polynomial& value) {
+        lhs += value;
+        rhs += value;
+        return *this;
+    }
+
+    Inequation operator+(const Polynomial& value) const {
+        Inequation inequation = *this;
+        inequation += value;
+        return inequation;
+    }
+
+    Inequation& operator-=(const Fraction& value) { return *this -= Polynomial(value); }
+
+    Inequation operator-(const Fraction& value) const { return *this - Polynomial(value); }
+
+    Inequation& operator-=(const Variable& value) { return *this -= Polynomial(value); }
+
+    Inequation operator-(const Variable& value) const { return *this - Polynomial(value); }
+
+    Inequation& operator-=(const Polynomial& value) {
+        lhs -= value;
+        rhs -= value;
+        return *this;
+    }
+
+    Inequation operator-(const Polynomial& value) const {
+        Inequation inequation = *this;
+        inequation -= value;
+        return inequation;
+    }
+
     Inequation& operator*=(const Fraction& value) { return *this *= Polynomial(value); }
 
     Inequation operator*(const Fraction& value) const { return *this * Polynomial(value); }
@@ -95,11 +135,17 @@ public:
     bool is_bool() const { return lhs.is_fraction() && rhs.is_fraction(); }
 
     explicit operator bool() const { return detail::evaluate_relational_operator(static_cast<Fraction>(lhs), opr, static_cast<Fraction>(rhs)); }
+
+    explicit operator Equation() const;
 };
 
 class algebra::Equation : public Inequation {
 public:
-    Equation(const Polynomial& polynomial, const Polynomial& rhs) : Inequation(polynomial, RelationalOperator::EQ, rhs) {}
+    Equation(const Polynomial& lhs, const Polynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
+
+    static std::map<Variable, Fraction> solve_linear_system(const std::vector<Equation>& equations) {
+        return {};
+    }
 
     Equation swap() const {
         Equation res = *this;
@@ -107,6 +153,8 @@ public:
         return res;
     }
 };
+
+inline algebra::Inequation::operator Equation() const { return Equation(lhs, rhs); }
 
 inline algebra::Inequation operator<(const algebra::Polynomial& lhs, const algebra::Polynomial& rhs) {
     return algebra::Inequation(lhs, algebra::RelationalOperator::LT, rhs);

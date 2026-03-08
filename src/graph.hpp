@@ -1,26 +1,32 @@
 #pragma once
 
 class algebra::Graph {
-    std::string interpreter_path, source_path;
-
 public:
-    Graph(const std::string& interpreter_path = "/home/dream/.virtualenvs/python/bin/python",
-          const std::string& source_path = "/home/dream/github/algebra/utils/graph.py") :
-        interpreter_path(interpreter_path), source_path(source_path) {}
+    inline static std::string interpreter_path = "/home/dream/.virtualenvs/python/bin/python";
+    inline static std::string source_path = "/home/dream/github/algebra/utils/graph.py";
 
-    void plot(const std::vector<Polynomial>& polynomials, const std::string& variable = "x", const std::string& file_name = "graph.png") const {
-        const int size = polynomials.size();
+    static void plot(const std::vector<Inequation>& inequations, const std::string& variable = "x", const std::string& file_name = "graph.png") {
+        const int size = inequations.size();
         std::string x;
+        std::vector<Polynomial> simplified;
         std::vector<std::pair<std::string, Fraction>> substituent(1, {variable, 0});
+        std::vector<std::vector<int>> combinations = detail::generate_combinations(size, 2);
         std::vector<std::string> ys(size);
+        simplified.reserve(size);
 
+        for (const Inequation& inequation : inequations) {
+            simplified.push_back(inequation.solve_for(Variable("y")).rhs);
+        }
         for (Fraction i = 0; i < 10; i += Fraction(1, 100)) {
-            x += std::to_string(i) + ',';
-            substituent.front().second = i;
+            x.append(std::to_string(i)).push_back(',');
+            substituent[0].second = i;
 
             for (int j = 0; j < size; j++) {
-                ys[j] += std::to_string(polynomials[j].substitute(substituent)) + ',';
+                ys[j].append(std::to_string(simplified[j].substitute(substituent))).push_back(',');
             }
+        }
+        for (int i = 0; i < size; i++) {
+            ys[i].append(" '").append(std::to_string(inequations[i])).push_back('\'');
         }
         std::string command = interpreter_path + ' ' + source_path + ' ' + file_name + ' ' + x + ' ';
 
