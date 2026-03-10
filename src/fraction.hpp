@@ -17,7 +17,7 @@ class algebra::Fraction {
         }
     }
 
-    constexpr bool infinity() const;
+    constexpr bool is_infinity() const;
 
 public:
     int64_t numerator, denominator;
@@ -38,9 +38,9 @@ public:
     constexpr Fraction operator-() const { return Fraction(-numerator, denominator); }
 
     constexpr Fraction& operator+=(const Fraction& value) {
-        if (value.infinity()) {
+        if (value.is_infinity()) {
             *this = value;
-        } else if (!infinity()) {
+        } else if (!is_infinity()) {
             numerator = numerator * value.denominator + value.numerator * denominator;
             denominator *= value.denominator;
             simplify();
@@ -63,9 +63,9 @@ public:
     }
 
     constexpr Fraction& operator*=(const Fraction& value) {
-        if (value.infinity()) {
+        if (value.is_infinity()) {
             *this = value;
-        } else if (!infinity()) {
+        } else if (!is_infinity()) {
             numerator *= value.numerator;
             denominator *= value.denominator;
             simplify();
@@ -80,9 +80,9 @@ public:
     }
 
     constexpr Fraction& operator/=(const Fraction& value) {
-        if (value.infinity()) {
+        if (value.is_infinity()) {
             *this = value;
-        } else if (!infinity()) {
+        } else if (!is_infinity()) {
             numerator *= value.denominator;
             denominator *= value.numerator;
             simplify();
@@ -97,9 +97,9 @@ public:
     }
 
     constexpr Fraction& operator^=(const Fraction& value) {
-        if (value.infinity()) {
+        if (value.is_infinity()) {
             *this = value;
-        } else if (!infinity()) {
+        } else if (!is_infinity()) {
             const double exponent = static_cast<double>(value);
             *this = Fraction(std::pow(numerator, exponent)) / Fraction(std::pow(denominator, exponent));
         }
@@ -133,6 +133,10 @@ namespace std {
         return fraction;
     }
 
+    inline algebra::Fraction gcd(const algebra::Fraction& lhs, const algebra::Fraction& rhs) {
+        return {gcd(lhs.numerator, rhs.numerator), lcm(lhs.denominator, rhs.denominator)};
+    }
+
     inline algebra::Fraction& max(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs < rhs ? rhs : lhs; }
 
     inline algebra::Fraction& min(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs <= rhs ? lhs : rhs; }
@@ -154,6 +158,6 @@ namespace std {
     }
 } // namespace std
 
-constexpr bool algebra::Fraction::infinity() const { return std::abs(*this) == inf; }
+constexpr bool algebra::Fraction::is_infinity() const { return std::abs(*this) == inf; }
 
 inline std::ostream& algebra::operator<<(std::ostream& out, const Fraction& fraction) { return out << std::to_string(fraction); }
