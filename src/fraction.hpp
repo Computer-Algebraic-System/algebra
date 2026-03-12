@@ -103,9 +103,13 @@ public:
     constexpr bool operator==(const double value) const { return static_cast<double>(*this) == value; }
 
     constexpr explicit operator double() const { return static_cast<double>(numerator) / denominator; }
+
+    Fraction reciprocate() const { return {denominator, numerator}; }
 };
 
-inline static constexpr algebra::Fraction inf = INT64_MAX;
+namespace algebra {
+    inline static constexpr Fraction inf = INT64_MAX;
+}
 
 namespace std {
     inline algebra::Fraction abs(algebra::Fraction fraction) {
@@ -122,10 +126,10 @@ namespace std {
     inline algebra::Fraction& min(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs <= rhs ? lhs : rhs; }
 
     inline string to_string(const algebra::Fraction& fraction) {
-        if (fraction == inf) {
+        if (fraction == algebra::inf) {
             return "inf";
         }
-        if (fraction == -inf) {
+        if (fraction == -algebra::inf) {
             return "-inf";
         }
         std::string res = std::to_string(fraction.numerator);

@@ -1,4 +1,5 @@
 #pragma once
+#include "../../linalg.hpp"
 
 class algebra::Inequation {
 
@@ -141,9 +142,9 @@ public:
 
 class algebra::Equation : public Inequation {
 public:
-    Equation(const Polynomial& lhs, const Polynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
+    constexpr Equation() = default;
 
-    static std::map<Variable, Fraction> solve_linear_system(const std::vector<Equation>& equations) { return {}; }
+    Equation(const Polynomial& lhs, const Polynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
 
     Equation swap() const {
         Equation res = *this;

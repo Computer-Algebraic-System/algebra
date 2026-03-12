@@ -7,19 +7,20 @@ public:
 
 namespace std {
     inline string to_string(const algebra::Point& point) {
-        return string(")").append(to_string(point.x)).append(", ").append(to_string(point.y)).append(")");
+        return string("(").append(to_string(point.x)).append(", ").append(to_string(point.y)).append(")");
     }
 } // namespace std
 
-inline std::ostream& operator<<(std::ostream& out, const algebra::Point& point) { return out << std::to_string(point); }
+inline std::ostream& algebra::operator<<(std::ostream& out, const Point& point) { return out << std::to_string(point); }
 
 class algebra::Graph {
 public:
     inline static std::string interpreter_path = "/home/dream/.virtualenvs/python/bin/python";
     inline static std::string source_path = "/home/dream/github/algebra/utils/graph.py";
 
+    // 0 -> Bounded | 1 -> Unbounded
     // filename x n y1 ie1 y2 ie2 ... yn ien m p1 p2 ... pm
-    static void plot(const std::vector<Inequation>& inequations, const std::vector<Point>& points = {}, const Fraction& limit = 10,
+    static int plot(const std::vector<Inequation>& inequations, const std::vector<Point>& points = {}, const Fraction& limit = 10,
                      const std::string& file_name = "graph.png") {
         const int inequations_size = inequations.size(), points_size = points.size();
         const Fraction increment = limit / 100;
@@ -55,7 +56,7 @@ public:
             .append(std::to_string(inequations_size))
             .push_back(' ');
 
-        for (const std::string y : ys) {
+        for (const std::string& y : ys) {
             command.append(y).push_back(' ');
         }
         command.append(std::to_string(points_size)).push_back(' ');
@@ -63,6 +64,6 @@ public:
         for (const auto& [px, py] : points) {
             command.append(std::to_string(px)).append(",").append(std::to_string(py)).push_back(' ');
         }
-        system(command.c_str());
+        return system(command.c_str());
     }
 };

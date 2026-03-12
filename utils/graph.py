@@ -36,14 +36,15 @@ plt.fill_between(x, lower, upper, where=(upper >= lower), alpha=0.25)
 
 for i in range(int(sys.argv[k])):
     k += 1
-    x, y = eval(sys.argv[k])
-    plt.scatter(x, y, s=80)
-    plt.text(x + 0.05, y + 0.05, f"({x}, {y})")
+    x, y = sys.argv[k].split(',')
+    plt.scatter(eval(x), eval(y), s=80)
+    plt.text(eval(x) + 0.05, eval(y) + 0.05, f"({x}, {y})")
 
-plt.xlabel("X values")
-plt.ylabel("Y values")
+plt.xlabel("x axis")
+plt.ylabel("y axis")
 plt.grid(True)
 plt.xlim(left=0)
 plt.ylim(bottom=0)
 plt.legend()
 plt.savefig(sys.argv[1], dpi=300)
+sys.exit(1 if np.isinf(upper).any() else 0)
