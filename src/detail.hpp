@@ -40,22 +40,23 @@ namespace algebra::detail {
     }
 
     inline std::vector<std::vector<int>> generate_combinations(const int n, const int k) {
-        std::vector<int> curr;
-        std::vector<std::vector<int>> ans;
+        std::vector<int> current;
+        std::vector<std::vector<int>> res;
 
-        const auto inner = [](auto&& self, int start, int n, int k, std::vector<int>& current, std::vector<std::vector<int>>& res) -> void {
-            if (current.size() == k) {
-                res.push_back(current);
+        const auto inner = [](auto&& self, const int start, const int a, const int b, std::vector<int>& curr,
+                              std::vector<std::vector<int>>& ans) -> void {
+            if (curr.size() == b) {
+                ans.push_back(curr);
                 return;
             }
 
-            for (int i = start; i < n; i++) {
-                current.push_back(i);
-                self(self, i + 1, n, k, current, res);
-                current.pop_back();
+            for (int i = start; i < a; i++) {
+                curr.push_back(i);
+                self(self, i + 1, a, b, curr, ans);
+                curr.pop_back();
             }
         };
-        inner(inner, 0, n, k, curr, ans);
-        return ans;
+        inner(inner, 0, n, k, current, res);
+        return res;
     }
 } // namespace algebra::detail

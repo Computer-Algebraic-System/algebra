@@ -35,7 +35,7 @@ public:
         simplify();
     }
 
-    constexpr Fraction operator-() const { return Fraction(-numerator, denominator); }
+    constexpr Fraction operator-() const { return {-numerator, denominator}; }
 
     constexpr Fraction& operator+=(const Fraction& value) {
         if (value.is_infinity()) {
@@ -48,19 +48,11 @@ public:
         return *this;
     }
 
-    constexpr Fraction operator+(const Fraction& value) const {
-        Fraction fraction = *this;
-        fraction += value;
-        return fraction;
-    }
+    constexpr Fraction operator+(const Fraction& value) const { return Fraction(*this) += value; }
 
     constexpr Fraction& operator-=(const Fraction& value) { return *this += -value; }
 
-    constexpr Fraction operator-(const Fraction& value) const {
-        Fraction fraction = *this;
-        fraction -= value;
-        return fraction;
-    }
+    constexpr Fraction operator-(const Fraction& value) const { return *this + -value; }
 
     constexpr Fraction& operator*=(const Fraction& value) {
         if (value.is_infinity()) {
@@ -73,11 +65,7 @@ public:
         return *this;
     }
 
-    constexpr Fraction operator*(const Fraction& value) const {
-        Fraction fraction = *this;
-        fraction *= value;
-        return fraction;
-    }
+    constexpr Fraction operator*(const Fraction& value) const { return Fraction(*this) *= value; }
 
     constexpr Fraction& operator/=(const Fraction& value) {
         if (value.is_infinity()) {
@@ -90,11 +78,7 @@ public:
         return *this;
     }
 
-    constexpr Fraction operator/(const Fraction& value) const {
-        Fraction fraction = *this;
-        fraction /= value;
-        return fraction;
-    }
+    constexpr Fraction operator/(const Fraction& value) const { return Fraction(*this) /= value; }
 
     constexpr Fraction& operator^=(const Fraction& value) {
         if (value.is_infinity()) {
@@ -106,11 +90,7 @@ public:
         return *this;
     }
 
-    constexpr Fraction operator^(const Fraction& value) const {
-        Fraction fraction = *this;
-        fraction ^= value;
-        return fraction;
-    }
+    constexpr Fraction operator^(const Fraction& value) const { return Fraction(*this) ^= value; }
 
     constexpr std::strong_ordering operator<=>(const Fraction& value) const {
         return static_cast<int128_t>(numerator) * value.denominator <=> static_cast<int128_t>(value.numerator) * denominator;

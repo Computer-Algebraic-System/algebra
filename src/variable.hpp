@@ -51,11 +51,7 @@ public:
         return *this;
     }
 
-    Variable operator*(const Variable& value) const {
-        Variable res = *this;
-        res *= value;
-        return res;
-    }
+    Variable operator*(const Variable& value) const { return Variable(*this) *= value; }
 
     Variable& operator/=(const Fraction& value) { return *this /= Variable(value); }
 
@@ -78,11 +74,7 @@ public:
         return *this;
     }
 
-    Variable operator/(const Variable& value) const {
-        Variable res = *this;
-        res /= value;
-        return res;
-    }
+    Variable operator/(const Variable& value) const { return Variable(*this) /= value; }
 
     Variable& operator^=(const Fraction& value) {
         coefficient ^= value;
@@ -93,11 +85,7 @@ public:
         return *this;
     }
 
-    Variable operator^(const Fraction& value) const {
-        Variable variable = *this;
-        variable ^= value;
-        return variable;
-    }
+    Variable operator^(const Fraction& value) const { return Variable(*this) ^= value; }
 
     constexpr std::strong_ordering operator<=>(const Variable& value) const {
         const bool is_const = variables.empty(), value_const = value.variables.empty();

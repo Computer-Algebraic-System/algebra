@@ -3,19 +3,22 @@ import sys
 try:
     import numpy as np
     import matplotlib.pyplot as plt
+
 except ModuleNotFoundError:
     from subprocess import check_call
+
     check_call([sys.executable, "-m", "pip", "install", "numpy", "matplotlib"])
     import numpy as np
     import matplotlib.pyplot as plt
 
 x = np.array(list(eval(sys.argv[2])))
-
 le_constraints = []
 ge_constraints = []
+k = 4
 
-for y_vals, label in zip(sys.argv[3::2], sys.argv[4::2]):
-    y = np.array(list(eval(y_vals)))
+for i in range(int(sys.argv[3])):
+    y = np.array(list(eval(sys.argv[k])))
+    label = sys.argv[k + 1]
     plt.plot(x, y, label=label)
 
     if "<=" in label:
@@ -24,28 +27,18 @@ for y_vals, label in zip(sys.argv[3::2], sys.argv[4::2]):
     elif ">=" in label:
         ge_constraints.append(y)
 
+    k += 2
 
-upper = (
-    np.minimum.reduce(le_constraints)
-    if le_constraints
-    else np.full_like(x, np.inf)
-)
-
-lower = (
-    np.maximum.reduce(ge_constraints)
-    if ge_constraints
-    else np.zeros_like(x)
-)
-
+upper = (np.minimum.reduce(le_constraints) if le_constraints else np.full_like(x, np.inf))
+lower = (np.maximum.reduce(ge_constraints) if ge_constraints else np.zeros_like(x))
 lower = np.maximum(lower, 0)
+plt.fill_between(x, lower, upper, where=(upper >= lower), alpha=0.25)
 
-plt.fill_between(
-    x,
-    lower,
-    upper,
-    where=(upper >= lower),
-    alpha=0.25
-)
+for i in range(int(sys.argv[k])):
+    k += 1
+    x, y = eval(sys.argv[k])
+    plt.scatter(x, y, s=80)
+    plt.text(x + 0.05, y + 0.05, f"({x}, {y})")
 
 plt.xlabel("X values")
 plt.ylabel("Y values")

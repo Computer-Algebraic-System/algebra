@@ -30,7 +30,10 @@ namespace algebra {
     class Interval;
     std::ostream& operator<<(std::ostream&, const Interval&);
 
+
+    class Point;
     class Graph;
+    std::ostream& operator<<(std::ostream&, const Point&);
 
     namespace detail {
         RelationalOperator invert_relational_operator(RelationalOperator);

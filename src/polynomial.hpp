@@ -53,11 +53,7 @@ public:
         return *this;
     }
 
-    Polynomial operator+(const Polynomial& value) const {
-        Polynomial res = *this;
-        res += value;
-        return res;
-    }
+    Polynomial operator+(const Polynomial& value) const { return Polynomial(*this) += value; }
 
     Polynomial& operator-=(const Fraction& value) { return *this += -value; }
 
@@ -103,11 +99,7 @@ public:
         return *this;
     }
 
-    Polynomial operator/(const Variable& value) const {
-        Polynomial res = *this;
-        res /= value;
-        return res;
-    }
+    Polynomial operator/(const Variable& value) const { return Polynomial(*this) /= value; }
 
     std::map<Variable, Fraction> roots() const;
 
