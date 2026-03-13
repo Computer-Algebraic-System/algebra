@@ -29,16 +29,42 @@ for i in range(int(sys.argv[3])):
 
     k += 2
 
-upper = (np.minimum.reduce(le_constraints) if le_constraints else np.full_like(x, np.inf))
-lower = (np.maximum.reduce(ge_constraints) if ge_constraints else np.zeros_like(x))
+upper = np.minimum.reduce(le_constraints) if le_constraints else np.full_like(x, np.inf)
+lower = np.maximum.reduce(ge_constraints) if ge_constraints else np.zeros_like(x)
 lower = np.maximum(lower, 0)
-plt.fill_between(x, lower, upper, where=(upper >= lower), alpha=0.25)
+mask = np.ones_like(x, dtype=bool)
 
 for i in range(int(sys.argv[k])):
     k += 1
-    x, y = sys.argv[k].split(',')
-    plt.scatter(eval(x), eval(y), s=80)
-    plt.text(eval(x) + 0.05, eval(y) + 0.05, f"({x}, {y})")
+    px, py = sys.argv[k].split(',')
+
+    plt.scatter(eval(px), eval(py), s=80)
+    plt.text(eval(px) + 0.05, eval(py) + 0.05, f"({px}, {py})")
+
+x_le = []
+x_ge = []
+k += 1
+
+for i in range(int(sys.argv[k])):
+    k += 1
+    rhs = eval(sys.argv[k])
+    k += 1
+    label = sys.argv[k]
+    plt.axvline(rhs, linestyle="--", label=label)
+
+    if "<=" in label:
+        x_le.append(rhs)
+
+    elif ">=" in label:
+        x_ge.append(rhs)
+
+if x_le:
+    mask &= (x <= min(x_le))
+
+if x_ge:
+    mask &= (x >= max(x_ge))
+
+plt.fill_between(x, lower, upper, where=(upper >= lower) & mask, alpha=0.25)
 
 plt.xlabel("x axis")
 plt.ylabel("y axis")

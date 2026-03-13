@@ -104,6 +104,8 @@ public:
 
     constexpr explicit operator double() const { return static_cast<double>(numerator) / denominator; }
 
+    constexpr explicit operator int64_t() const { return numerator / denominator; }
+
     Fraction reciprocate() const { return {denominator, numerator}; }
 };
 
