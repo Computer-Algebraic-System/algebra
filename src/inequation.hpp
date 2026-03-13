@@ -1,5 +1,4 @@
 #pragma once
-#include "../../linalg.hpp"
 
 class algebra::Inequation {
 
