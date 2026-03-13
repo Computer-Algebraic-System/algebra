@@ -30,12 +30,31 @@ namespace algebra {
     class Interval;
     std::ostream& operator<<(std::ostream&, const Interval&);
 
-
     class Point;
     class Graph;
     std::ostream& operator<<(std::ostream&, const Point&);
 
     namespace detail {
+        struct FormatSettings {
+            bool verbose = false;
+            std::ostream* out = &std::cout;
+
+            template <typename T>
+            friend FormatSettings& operator<<(FormatSettings& fmt, const T& object) {
+                if (fmt.verbose) {
+                    *fmt.out << object;
+                }
+                return fmt;
+            }
+
+            friend FormatSettings& operator<<(FormatSettings& fmt, std::ostream& (*manip)(std::ostream&)) {
+                if (fmt.verbose) {
+                    manip(*fmt.out);
+                }
+                return fmt;
+            }
+        };
+
         RelationalOperator invert_relational_operator(RelationalOperator);
         bool evaluate_relational_operator(const Fraction&, RelationalOperator, const Fraction&);
         std::vector<std::vector<int>> generate_combinations(int, int);
