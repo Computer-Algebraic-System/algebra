@@ -142,10 +142,11 @@ namespace std {
 
     inline string to_string(const algebra::Variable& variable) {
         auto convert = [](const algebra::Variable& var) -> string {
+            const int size = var.variables.size();
             std::string res;
 
             for (const auto& [name, exponent] : var.variables) {
-                if (exponent != 1) {
+                if (exponent != 1 && size > 1) {
                     res.push_back('(');
                 }
                 res.append(name);
@@ -160,7 +161,7 @@ namespace std {
                         res.append(std::to_string(exponent));
                     }
                 }
-                if (exponent != 1) {
+                if (exponent != 1 && size > 1) {
                     res.push_back(')');
                 }
             }
