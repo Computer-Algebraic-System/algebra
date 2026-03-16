@@ -20,12 +20,25 @@ for i in range(int(sys.argv[3])):
     y = np.array(list(eval(sys.argv[k])))
     label = sys.argv[k + 1]
     plt.plot(x, y, label=label)
+    expr = label.replace(" ", "")
+    y_pos = expr.find("y")
 
-    if "<=" in label:
-        le_constraints.append(y)
+    if y_pos <= 0:
+        y_positive = True
+    else:
+        y_positive = expr[y_pos - 1] != "-"
 
-    elif ">=" in label:
-        ge_constraints.append(y)
+    if "<=" in expr:
+        if y_positive:
+            le_constraints.append(y)
+        else:
+            ge_constraints.append(y)
+
+    elif ">=" in expr:
+        if y_positive:
+            ge_constraints.append(y)
+        else:
+            le_constraints.append(y)
 
     k += 2
 
@@ -50,7 +63,7 @@ for i in range(int(sys.argv[k])):
     rhs = eval(sys.argv[k])
     k += 1
     label = sys.argv[k]
-    plt.axvline(rhs, linestyle="--", label=label)
+    plt.axvline(rhs, label=label)
 
     if "<=" in label:
         x_le.append(rhs)
