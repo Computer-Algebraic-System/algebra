@@ -17,8 +17,6 @@ class algebra::Fraction {
         }
     }
 
-    constexpr bool is_infinity() const;
-
 public:
     int64_t numerator, denominator;
 
@@ -106,12 +104,37 @@ public:
 
     constexpr explicit operator int64_t() const { return numerator / denominator; }
 
+    constexpr bool is_infinity() const;
+
     Fraction reciprocate() const { return {denominator, numerator}; }
+
+    std::string to_latex() const;
 };
 
 namespace algebra {
     inline static constexpr Fraction inf = INT64_MAX;
-}
+
+    namespace detail {
+        inline bool evaluate_relational_operator(const Fraction& lhs, const RelationalOperator opr, const Fraction& rhs) {
+            switch (opr) {
+            case RelationalOperator::LT:
+                return lhs < rhs;
+
+            case RelationalOperator::LE:
+                return lhs <= rhs;
+
+            case RelationalOperator::GT:
+                return lhs > rhs;
+
+            case RelationalOperator::GE:
+                return lhs >= rhs;
+
+            default:
+                return lhs == rhs;
+            }
+        }
+    } // namespace detail
+} // namespace algebra
 
 namespace std {
     inline algebra::Fraction abs(algebra::Fraction fraction) {
@@ -128,22 +151,43 @@ namespace std {
     inline algebra::Fraction& min(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs <= rhs ? lhs : rhs; }
 
     inline string to_string(const algebra::Fraction& fraction) {
-        if (fraction == algebra::inf) {
-            return "inf";
+        string res;
+
+        if (fraction.numerator < 0) {
+            res.push_back('-');
         }
-        if (fraction == -algebra::inf) {
-            return "-inf";
+        if (fraction.is_infinity()) {
+            return res.append("inf");
         }
-        std::string res = std::to_string(fraction.numerator);
+        res.append(to_string(abs(fraction.numerator)));
 
         if (fraction.denominator != 1) {
-            res.push_back('/');
-            res.append(to_string(fraction.denominator));
+            res.append("/").append(to_string(fraction.denominator));
         }
         return res;
     }
 } // namespace std
 
 constexpr bool algebra::Fraction::is_infinity() const { return std::abs(*this) == inf; }
+
+inline std::string algebra::Fraction::to_latex() const {
+    std::string res;
+
+    if (numerator < 0) {
+        res.push_back('-');
+    }
+    if (is_infinity()) {
+        return res.append("\\infty");
+    }
+    if (denominator != 1) {
+        res.append("\\frac{");
+    }
+    res.append(std::to_string(std::abs(numerator)));
+
+    if (denominator != 1) {
+        res.append("}{").append(std::to_string(denominator)).append("}");
+    }
+    return res;
+}
 
 inline std::ostream& algebra::operator<<(std::ostream& out, const Fraction& fraction) { return out << std::to_string(fraction); }

@@ -101,7 +101,7 @@ public:
         return res;
     }
 
-    Inequation substitute(const std::vector<std::pair<std::string, Fraction>>& values) const {
+    Inequation substitute(const std::vector<std::pair<Variable, Fraction>>& values) const {
         Inequation res = *this;
         res.lhs = res.lhs.substitute(values);
         res.rhs = res.rhs.substitute(values);
@@ -126,11 +126,15 @@ public:
                 res.rhs += var;
             }
         }
-        if (res.lhs.is_variable()) {
+        if (res.lhs.is_value()) {
             res /= static_cast<Variable>(res.lhs).coefficient;
         }
         return res;
     }
+
+    Inequation differentiate(const Variable& wrt) const { return {lhs.differentiate(wrt), opr, rhs.differentiate(wrt)}; }
+
+    std::string to_latex() const { return lhs.to_latex().append(" ").append(detail::to_latex(opr)).append(" ").append(rhs.to_latex()); }
 
     bool is_bool() const { return lhs.is_fraction() && rhs.is_fraction(); }
 
@@ -265,10 +269,7 @@ inline algebra::Equation operator==(const algebra::Variable& lhs, const algebra:
 
 namespace std {
     inline string to_string(const algebra::Inequation& inequation) {
-        string res = to_string(inequation.lhs);
-        res.push_back(' ');
-        res.append(to_string(inequation.opr)).push_back(' ');
-        return res.append(to_string(inequation.rhs));
+        return to_string(inequation.lhs).append(" ").append(to_string(inequation.opr)).append(" ").append(to_string(inequation.rhs));
     }
 } // namespace std
 

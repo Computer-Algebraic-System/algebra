@@ -30,7 +30,7 @@ public:
         std::string x;
         std::vector<Polynomial> simplified(inequations_size);
         std::vector<Fraction> non_ys(inequations_size);
-        std::vector<std::pair<std::string, Fraction>> substituent(1, {"x", 0});
+        std::vector<std::pair<Variable, Fraction>> substituent(1, {Variable("x"), 0});
         std::vector<std::vector<int>> combinations = detail::generate_combinations(inequations_size, 2);
         std::vector<std::string> ys(inequations_size);
 

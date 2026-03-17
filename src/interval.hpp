@@ -7,7 +7,7 @@ public:
 
     constexpr Interval() = default;
 
-    Interval(const Polynomial& lhs, const Polynomial& mid, const Polynomial& rhs, const RelationalOperator opr1, const RelationalOperator opr2) :
+    Interval(const Polynomial& lhs, const RelationalOperator opr1, const Polynomial& mid, const RelationalOperator opr2, const Polynomial& rhs) :
         lhs(lhs), mid(mid), rhs(rhs), opr1(opr1), opr2(opr2) {}
 
     Interval(const Inequation& lhs, const RelationalOperator opr, const Polynomial& rhs) :
@@ -83,6 +83,12 @@ public:
         res /= value;
         return res;
     }
+
+    Interval differentiate(const Variable& wrt) const { return {lhs.differentiate(wrt), opr1, mid.differentiate(wrt), opr2, rhs.differentiate(wrt)}; }
+
+    std::string to_latex() const {
+        return Inequation(lhs, opr1, mid).to_latex().append(" ").append(detail::to_latex(opr2)).append(" ").append(rhs.to_latex());
+    }
 };
 
 inline algebra::Interval operator<(const algebra::Inequation& lhs, const algebra::Polynomial& rhs) {
@@ -157,12 +163,11 @@ inline algebra::Interval operator==(const algebra::Variable& lhs, const algebra:
 
 namespace std {
     inline string to_string(const algebra::Interval& interval) {
-        string res = to_string(interval.lhs);
-        res.push_back(' ');
-        res.append(to_string(interval.opr1)).push_back(' ');
-        res.append(to_string(interval.mid)).push_back(' ');
-        res.append(to_string(interval.opr2)).push_back(' ');
-        return res.append(to_string(interval.rhs));
+        return to_string(algebra::Inequation(interval.lhs, interval.opr1, interval.mid))
+            .append(" ")
+            .append(to_string(interval.opr2))
+            .append(" ")
+            .append(to_string(interval.rhs));
     }
 } // namespace std
 

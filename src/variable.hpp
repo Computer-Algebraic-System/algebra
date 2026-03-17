@@ -5,11 +5,9 @@ class algebra::Variable {
         std::string name;
         Fraction exponent;
 
-        constexpr std::strong_ordering operator<=>(const Var& value) const {
-            return std::tuple(-exponent, name) <=> std::tuple(-value.exponent, value.name);
-        }
+        std::strong_ordering operator<=>(const Var& value) const { return std::tuple(-exponent, name) <=> std::tuple(-value.exponent, value.name); }
 
-        constexpr bool operator==(const Var&) const = default;
+        bool operator==(const Var&) const = default;
     };
 
 public:
@@ -17,6 +15,8 @@ public:
     std::vector<Var> variables;
 
     Variable() = default;
+
+    Variable(const char* str) : Variable(std::string(str)) {}
 
     Variable(const std::string& name) : coefficient(1), variables({{name, 1}}) {}
 
@@ -37,16 +37,21 @@ public:
     Variable& operator*=(const Variable& value) {
         coefficient *= value.coefficient;
 
-        for (const Var& var : value.variables) {
-            const auto itr = std::ranges::lower_bound(variables, var);
+        if (coefficient == 0) {
+            variables.clear();
+        } else {
+            for (const Var& var : value.variables) {
+                const auto itr = std::ranges::find(variables, var.name, &Var::name);
 
-            if (itr != variables.end() && itr->name == var.name) {
-                if ((itr->exponent += var.exponent) == 0) {
-                    variables.erase(itr);
+                if (itr != variables.end()) {
+                    if ((itr->exponent += var.exponent) == 0) {
+                        variables.erase(itr);
+                    }
+                } else {
+                    variables.push_back(var);
                 }
-            } else {
-                variables.insert(itr, var);
             }
+            std::ranges::sort(variables);
         }
         return *this;
     }
@@ -61,16 +66,17 @@ public:
         coefficient /= value.coefficient;
 
         for (const Var& var : value.variables) {
-            const auto itr = std::ranges::lower_bound(variables, var);
+            const auto itr = std::ranges::find(variables, var.name, &Var::name);
 
-            if (itr != variables.end() && itr->name == var.name) {
+            if (itr != variables.end()) {
                 if ((itr->exponent -= var.exponent) == 0) {
                     variables.erase(itr);
                 }
             } else {
-                variables.emplace(itr, var.name, -var.exponent);
+                variables.emplace_back(var.name, -var.exponent);
             }
         }
+        std::ranges::sort(variables);
         return *this;
     }
 
@@ -87,7 +93,7 @@ public:
 
     Variable operator^(const Fraction& value) const { return Variable(*this) ^= value; }
 
-    constexpr std::strong_ordering operator<=>(const Variable& value) const {
+    std::strong_ordering operator<=>(const Variable& value) const {
         const bool is_const = variables.empty(), value_const = value.variables.empty();
 
         if (is_const != value_const) {
@@ -96,17 +102,23 @@ public:
         return std::tie(variables, coefficient) <=> std::tie(value.variables, value.coefficient);
     }
 
-    constexpr bool operator==(const Variable&) const = default;
+    bool operator==(const Variable&) const = default;
 
-    Variable substitute(const std::vector<std::pair<std::string, Fraction>>& values) const {
+    Variable substitute(const std::vector<std::pair<Variable, Fraction>>& values) const {
         Variable res = *this;
 
-        for (const auto& [name, value] : values) {
+        for (const auto& [variable, value] : values) {
+            assert(!variable.variables.empty());
+            const std::string name = variable.variables.front().name;
             const auto itr = std::ranges::lower_bound(res.variables, name, {}, &Var::name);
 
             if (itr != res.variables.end() && itr->name == name) {
                 res.coefficient *= value ^ itr->exponent;
                 res.variables.erase(itr);
+            }
+            if (res.coefficient == 0) {
+                res.variables.clear();
+                break;
             }
         }
         return res;
@@ -122,7 +134,63 @@ public:
         return res;
     }
 
+    Variable differentiate(const Variable& wrt) const {
+        Variable res = *this;
+        const auto itr = std::ranges::find(res.variables, wrt.variables.front().name, &Var::name);
+
+        if (itr != res.variables.end() && itr->name == wrt.variables.front().name) {
+            res.coefficient *= itr->exponent;
+
+            if ((itr->exponent -= 1) == 0) {
+                res.variables.erase(itr);
+            }
+            return res;
+        }
+        return {};
+    }
+
     bool is_fraction() const { return variables.empty(); }
+
+    std::string to_latex() const {
+        auto convert = [this]() -> std::string {
+            std::string res;
+
+            for (const auto& [name, exponent] : variables) {
+                res.append(name);
+
+                if (exponent != 1) {
+                    res.append("^{").append(exponent.to_latex()).push_back('}');
+                }
+            }
+            return res;
+        };
+        if (variables.empty()) {
+            return coefficient.to_latex();
+        }
+        if (coefficient == 0) {
+            return "0";
+        }
+        if (coefficient == 1) {
+            return convert();
+        }
+        if (coefficient == -1) {
+            return '-' + convert();
+        }
+        if (coefficient.denominator != 1) {
+            std::string res("\\frac{");
+
+            if (std::abs(coefficient.numerator) == 1) {
+                if (coefficient.numerator == -1) {
+                    res.push_back('-');
+                }
+            } else {
+                res.append(std::to_string(coefficient.numerator));
+            }
+            res.append(convert()).append("}{").append(std::to_string(coefficient.denominator)).push_back('}');
+            return res;
+        }
+        return coefficient.to_latex() + convert();
+    }
 
     constexpr explicit operator Fraction() const {
         assert(is_fraction());
@@ -156,9 +224,11 @@ namespace std {
 
                     if (exponent.denominator != 1) {
                         res.push_back('(');
-                        res.append(std::to_string(exponent)).push_back(')');
-                    } else {
-                        res.append(std::to_string(exponent));
+                    }
+                    res.append(std::to_string(exponent));
+
+                    if (exponent.denominator != 1) {
+                        res.push_back(')');
                     }
                 }
                 if (exponent != 1 && size > 1) {
@@ -186,12 +256,10 @@ namespace std {
                 if (variable.coefficient.numerator == -1) {
                     res.push_back('-');
                 }
-                res.append(convert(variable)).push_back('/');
-                res.append(to_string(variable.coefficient.denominator));
             } else {
-                res.append(to_string(variable.coefficient.numerator)).append(convert(variable)).push_back('/');
-                res.append(to_string(variable.coefficient.denominator));
+                res.append(to_string(variable.coefficient.numerator));
             }
+            res.append(convert(variable)).append("/").append(to_string(variable.coefficient.denominator));
             return res;
         }
         return to_string(variable.coefficient) + convert(variable);
