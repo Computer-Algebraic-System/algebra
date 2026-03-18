@@ -27,6 +27,8 @@ namespace algebra {
                 case Output::LATEX:
                     if constexpr (requires(const T& obj) { obj.to_latex(); }) {
                         fmt.file << object.to_latex();
+                    } else if constexpr (std::is_same_v<T, const char *>) {
+                        fmt.file << "\\text{" << object << '}';
                     } else {
                         fmt.file << object;
                     }
@@ -67,7 +69,6 @@ namespace algebra {
                     system(command.c_str());
                 }
             }
-
         }; // namespace detail
 
         inline std::string to_latex(const RelationalOperator opr) {

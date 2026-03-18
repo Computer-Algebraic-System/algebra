@@ -15,5 +15,6 @@ int main() {
     out << (v + v.differentiate("x") + v.differentiate("y") + v.differentiate("z")) << std::endl;
     out << (v + v.differentiate("x") >= v.differentiate("y") + v.differentiate("z")) << std::endl;
     out << (v + v.differentiate("x") >= v.differentiate("y") + v.differentiate("z")).differentiate("x") << std::endl;
+
     return 0;
 }

@@ -92,8 +92,8 @@ public:
     AlgebraicContainer operator/(const Fraction& value) const { return *this / T(value); }
 
     AlgebraicContainer& operator/=(const T& value) {
-        for (T& value : expression) {
-            value /= value;
+        for (T& element : expression) {
+            element /= value;
         }
         return *this;
     }
