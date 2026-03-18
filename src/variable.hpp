@@ -16,8 +16,6 @@ public:
 
     Variable() = default;
 
-    Variable(const char* str) : Variable(std::string(str)) {}
-
     Variable(const std::string& name) : coefficient(1), variables({{name, 1}}) {}
 
     Variable(const Fraction& coefficient) : coefficient(coefficient) {}

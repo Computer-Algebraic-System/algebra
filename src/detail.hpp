@@ -7,12 +7,19 @@ namespace algebra {
             std::ofstream file;
             std::string filename;
 
+            void toggle_file(const std::string& name) {
+                output = Output::FILE;
+                filename = name;
+                file.open(filename);
+            }
+
             void toggle_latex(const std::string& name) {
                 output = Output::LATEX;
                 filename = name;
                 file.open(filename);
                 *this << "\\documentclass{article}\n";
                 *this << "\\usepackage{amsmath}\n";
+                *this << "\\usepackage{graphicx}\n";
                 *this << "\\renewcommand{\\arraystretch}{1.5}\n";
                 *this << "\\begin{document}\n";
             }
@@ -57,13 +64,24 @@ namespace algebra {
             }
 
             ~FormatSettings() {
-                if (output == Output::LATEX) {
-                    *this << "\\end{document}\n";
+                switch (output) {
+                case Output::FILE:
                     file.close();
-                    std::string base = filename.substr(0, filename.size() - 4);
-                    std::string command("pdflatex -interaction=nonstopmode ");
-                    command.append(filename).append(" > /dev/null 2>&1 && rm -f ").append(base).append(".log ").append(base).append(".aux");
-                    system(command.c_str());
+                    break;
+
+                case Output::LATEX:
+                    {
+                        *this << "\\end{document}\n";
+                        file.close();
+                        std::string base = filename.substr(0, filename.size() - 4);
+                        std::string command("pdflatex -interaction=nonstopmode ");
+                        command.append(filename).append(" > /dev/null 2>&1 && rm -f ").append(base).append(".log ").append(base).append(".aux");
+                        system(command.c_str());
+                        break;
+                    }
+
+                case Output::CONSOLE:
+                    break;
                 }
             }
         }; // namespace detail
@@ -129,7 +147,7 @@ namespace algebra {
         }
     } // namespace detail
 
-    inline detail::FormatSettings GLOBAL_FORMATING;
+    inline detail::FormatSettings GLOBAL_FORMATTING;
 } // namespace algebra
 
 namespace std {

@@ -85,6 +85,13 @@ public:
                 command.append(std::to_string(non_ys[i])).append(" ").append(ys[i]).push_back(' ');
             }
         }
-        return system(command.c_str());
+        const int code = system(command.c_str());
+
+        if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
+            std::string latex("\\begin{center}\n\\includegraphics[width=\\textwidth]{");
+            latex.append(file_name).append("}\n\\end{center}\n");
+            GLOBAL_FORMATTING << latex;
+        }
+        return code;
     }
 };
