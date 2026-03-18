@@ -156,7 +156,8 @@ public:
             std::string res;
 
             for (const auto& [name, exponent] : variables) {
-                res.append(name);
+                res.push_back(name.front());
+                res.append("_{").append(name.substr(1)).push_back('}');
 
                 if (exponent != 1) {
                     res.append("^{").append(exponent.to_latex()).push_back('}');

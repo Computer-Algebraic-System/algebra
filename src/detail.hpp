@@ -13,8 +13,8 @@ namespace algebra {
                 file.open(filename);
                 *this << "\\documentclass{article}\n";
                 *this << "\\usepackage{amsmath}\n";
+                *this << "\\renewcommand{\\arraystretch}{1.5}\n";
                 *this << "\\begin{document}\n";
-                *this << "\\begin{align*}\n";
             }
 
             template <typename T>
@@ -26,9 +26,7 @@ namespace algebra {
 
                 case Output::LATEX:
                     if constexpr (requires(const T& obj) { obj.to_latex(); }) {
-                        fmt.file << object.to_latex();
-                    } else if constexpr (std::is_same_v<T, const char *>) {
-                        fmt.file << "\\text{" << object << '}';
+                        fmt.file << "\\begin{align*}\n" << object.to_latex() << "\\end{align*}\n";
                     } else {
                         fmt.file << object;
                     }
@@ -60,7 +58,6 @@ namespace algebra {
 
             ~FormatSettings() {
                 if (output == Output::LATEX) {
-                    *this << "\\end{align*}\n";
                     *this << "\\end{document}\n";
                     file.close();
                     std::string base = filename.substr(0, filename.size() - 4);

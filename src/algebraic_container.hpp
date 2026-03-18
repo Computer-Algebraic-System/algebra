@@ -1,6 +1,7 @@
 #pragma once
 
 template <typename T>
+    requires std::is_same_v<T, algebra::Variable>
 class algebra::AlgebraicContainer {
 public:
     std::vector<T> expression;
