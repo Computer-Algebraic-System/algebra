@@ -269,7 +269,7 @@ inline algebra::Equation operator==(const algebra::Variable& lhs, const algebra:
 
 namespace std {
     inline string to_string(const algebra::Inequation& inequation) {
-        return to_string(inequation.lhs).append(" ").append(to_string(inequation.opr)).append(" ").append(to_string(inequation.rhs));
+        return to_string(inequation.lhs).append(" ").append(to_string(inequation.opr)).append(" ").append(to_string(inequation.rhs).append("\n"));
     }
 } // namespace std
 

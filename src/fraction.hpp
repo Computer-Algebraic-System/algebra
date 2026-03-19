@@ -24,7 +24,9 @@ public:
 
     constexpr Fraction(const int64_t numerator, const int64_t denominator = 1) : numerator(numerator), denominator(denominator) { simplify(); }
 
-    constexpr Fraction(double value) : numerator(0), denominator(1) {
+    template <typename T>
+        requires std::floating_point<T>
+    constexpr Fraction(T value) : numerator(0), denominator(1) {
         for (int i = 0; i < 9 && static_cast<int64_t>(value) != value; i++) {
             denominator *= 10;
             value *= 10;
@@ -94,15 +96,25 @@ public:
         return static_cast<int128_t>(numerator) * value.denominator <=> static_cast<int128_t>(value.numerator) * denominator;
     }
 
-    constexpr std::partial_ordering operator<=>(const double value) const { return static_cast<double>(*this) <=> value; }
+    template <typename T>
+        requires std::integral<T> || std::floating_point<T>
+    constexpr std::partial_ordering operator<=>(const T& value) const {
+        return static_cast<T>(*this) <=> value;
+    }
 
     constexpr bool operator==(const Fraction& value) const = default;
 
-    constexpr bool operator==(const double value) const { return static_cast<double>(*this) == value; }
+    template <typename T>
+        requires std::integral<T> || std::floating_point<T>
+    constexpr bool operator==(const T& value) const {
+        return static_cast<T>(*this) == value;
+    }
 
-    constexpr explicit operator double() const { return static_cast<double>(numerator) / denominator; }
-
-    constexpr explicit operator int64_t() const { return numerator / denominator; }
+    template <typename T>
+        requires std::integral<T> || std::floating_point<T>
+    constexpr explicit operator T() const {
+        return static_cast<T>(numerator) / denominator;
+    }
 
     constexpr bool is_infinity() const;
 

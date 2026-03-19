@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
+#include <complex>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -17,6 +18,9 @@ namespace algebra {
 
     class Fraction;
     std::ostream& operator<<(std::ostream&, const Fraction&);
+
+    class Complex;
+    std::ostream& operator<<(std::ostream&, const Complex&);
 
     class Variable;
     std::ostream& operator<<(std::ostream&, const Variable&);
@@ -52,6 +56,7 @@ namespace algebra {
 
 #include "src/detail.hpp"
 #include "src/fraction.hpp"
+#include "src/complex.hpp"
 #include "src/variable.hpp"
 #include "src/algebraic_container.hpp"
 #include "src/inequation.hpp"
