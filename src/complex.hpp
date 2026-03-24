@@ -4,6 +4,8 @@ class algebra::Complex {
 public:
     Fraction real, imag;
 
+    constexpr Complex(const double value) : real(value) {}
+
     constexpr Complex(const Fraction& real, const Fraction& imag = 0) : real(real), imag(imag) {}
 
     template <typename T>
@@ -67,6 +69,8 @@ public:
 
     constexpr Complex operator^(const Fraction& value) const { return Complex(*this) ^= value; }
 
+    constexpr bool operator==(const Complex& value) const { return real == value.real && imag == value.imag; }
+
     template <typename T>
         requires std::integral<T> || std::floating_point<T> || std::is_same_v<T, Fraction>
     constexpr explicit operator T() const {
@@ -80,4 +84,46 @@ public:
     }
 
     bool is_real() const { return imag == 0; }
+
+    std::string to_latex() const {
+        if (*this == 0) {
+            return "0";
+        }
+        std::string res;
+
+        if (real != 0) {
+            res.append(real.to_latex());
+
+            if (imag != 0) {
+                res.append(imag < 0 ? " - " : " + ");
+            }
+        }
+        if (imag != 0) {
+            res.append(std::abs(imag).to_latex()).push_back('i');
+        }
+        return res;
+    }
 };
+
+namespace std {
+    string to_string(const algebra::Complex& complex) {
+        if (complex == 0) {
+            return "0";
+        }
+        string res;
+
+        if (complex.real != 0) {
+            res.append(to_string(complex.real));
+
+            if (complex.imag != 0) {
+                res.append(complex.imag < 0 ? " - " : " + ");
+            }
+        }
+        if (complex.imag != 0) {
+            res.append(to_string(abs(complex.imag))).push_back('i');
+        }
+        return res;
+    }
+} // namespace std
+
+inline std::ostream& algebra::operator<<(std::ostream& out, const Complex& complex) { return out << std::to_string(complex); }

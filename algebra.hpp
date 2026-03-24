@@ -12,8 +12,6 @@
 #include <vector>
 
 namespace algebra {
-    using int128_t = __int128;
-
     enum class RelationalOperator { LT, LE, GT, GE, EQ };
 
     class Fraction;
@@ -25,13 +23,8 @@ namespace algebra {
     class Variable;
     std::ostream& operator<<(std::ostream&, const Variable&);
 
-    template <typename T>
-        requires std::is_same_v<T, Variable>
-    class AlgebraicContainer;
-    template <typename T>
-    std::ostream& operator<<(std::ostream&, const AlgebraicContainer<T>&);
-
-    using Polynomial = AlgebraicContainer<Variable>;
+    class Function;
+    std::ostream& operator<<(std::ostream&, const Function&);
 
     class Inequation;
     class Equation;
@@ -47,18 +40,34 @@ namespace algebra {
     namespace detail {
         struct FormatSettings;
 
+        template <typename T>
+            requires std::is_same_v<T, Variable> || std::is_same_v<T, Function>
+        class AlgebraicExpression;
+        template <typename T>
+        std::ostream& operator<<(std::ostream&, const AlgebraicExpression<T>&);
+
+        template <typename T>
+        class AlgebraicContainer;
+        template <typename T>
+        std::ostream& operator<<(std::ostream&, const AlgebraicContainer<T>&);
+
         std::string to_latex(RelationalOperator);
         RelationalOperator invert_relational_operator(RelationalOperator);
         bool evaluate_relational_operator(const Fraction&, RelationalOperator, const Fraction&);
         std::vector<std::vector<int>> generate_combinations(int, int);
     } // namespace detail
+
+    using Polynomial = detail::AlgebraicContainer<Variable>;
+    using Expression = detail::AlgebraicContainer<Function>;
 } // namespace algebra
 
-#include "src/detail.hpp"
+#include "utils/detail.hpp"
 #include "src/fraction.hpp"
 #include "src/complex.hpp"
 #include "src/variable.hpp"
-#include "src/algebraic_container.hpp"
+#include "utils/algebraic_expression.hpp"
+#include "utils/algebraic_container.hpp"
+#include "src/function.hpp"
 #include "src/inequation.hpp"
 #include "src/interval.hpp"
 #include "src/graph.hpp"

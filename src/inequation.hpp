@@ -6,7 +6,7 @@ public:
     RelationalOperator opr;
     Polynomial lhs, rhs;
 
-    constexpr Inequation() = default;
+    Inequation() = default;
 
     Inequation(const Polynomial& polynomial, const RelationalOperator opr, const Polynomial& rhs) : opr(opr), lhs(polynomial), rhs(rhs) {}
 
@@ -109,17 +109,18 @@ public:
     }
 
     Inequation solve_for(const Variable& variable) const {
+        assert(lhs.denominator.is_fraction() && rhs.denominator.is_fraction());
         Inequation res;
         res.opr = opr;
 
-        for (const Variable& var : lhs.expression) {
+        for (const Variable& var : lhs.numerator.terms) {
             if (var.basis() == variable) {
                 res.lhs += var;
             } else {
                 res.rhs += -var;
             }
         }
-        for (const Variable& var : rhs.expression) {
+        for (const Variable& var : rhs.numerator.terms) {
             if (var.basis() == variable) {
                 res.lhs += -var;
             } else {
@@ -145,7 +146,7 @@ public:
 
 class algebra::Equation : public Inequation {
 public:
-    constexpr Equation() = default;
+    Equation() = default;
 
     Equation(const Polynomial& lhs, const Polynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
 

@@ -1,6 +1,7 @@
 #pragma once
 
 class algebra::Variable {
+public:
     struct Var {
         std::string name;
         Fraction exponent;
@@ -9,8 +10,6 @@ class algebra::Variable {
 
         bool operator==(const Var&) const = default;
     };
-
-public:
     Fraction coefficient;
     std::vector<Var> variables;
 
@@ -83,8 +82,12 @@ public:
     Variable& operator^=(const Fraction& value) {
         coefficient ^= value;
 
-        for (auto& [_, exponent] : variables) {
-            exponent *= value;
+        if (value == 0) {
+            variables.clear();
+        } else {
+            for (auto& [_, exponent] : variables) {
+                exponent *= value;
+            }
         }
         return *this;
     }
@@ -208,7 +211,7 @@ namespace std {
     }
 
     inline string to_string(const algebra::Variable& variable) {
-        auto convert = [](const algebra::Variable& var) -> string {
+        auto format = [](const algebra::Variable& var) -> string {
             const int size = var.variables.size();
             std::string res;
 
@@ -243,10 +246,10 @@ namespace std {
             return "0";
         }
         if (variable.coefficient == 1) {
-            return convert(variable);
+            return format(variable);
         }
         if (variable.coefficient == -1) {
-            return '-' + convert(variable);
+            return '-' + format(variable);
         }
         if (variable.coefficient.denominator != 1) {
             string res;
@@ -258,10 +261,10 @@ namespace std {
             } else {
                 res.append(to_string(variable.coefficient.numerator));
             }
-            res.append(convert(variable)).append("/").append(to_string(variable.coefficient.denominator));
+            res.append(format(variable)).append("/").append(to_string(variable.coefficient.denominator));
             return res;
         }
-        return to_string(variable.coefficient) + convert(variable);
+        return to_string(variable.coefficient) + format(variable);
     }
 } // namespace std
 

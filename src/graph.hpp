@@ -35,8 +35,8 @@ public:
         std::vector<std::string> ys(inequations_size);
 
         for (int i = 0; i < inequations_size; i++) {
-            if (std::ranges::contains(std::array{inequations[i].lhs.expression, inequations[i].rhs.expression} | std::views::join, Variable("y"),
-                                      &Variable::basis)) {
+            if (std::ranges::contains(std::array{inequations[i].lhs.numerator.terms, inequations[i].rhs.numerator.terms} | std::views::join,
+                                      Variable("y"), &Variable::basis)) {
                 simplified[i] = inequations[i].solve_for(Variable("y")).rhs;
                 non_ys[i] = inf;
             } else {

@@ -5,7 +5,7 @@ public:
     Polynomial lhs, mid, rhs;
     RelationalOperator opr1, opr2;
 
-    constexpr Interval() = default;
+    Interval() = default;
 
     Interval(const Polynomial& lhs, const RelationalOperator opr1, const Polynomial& mid, const RelationalOperator opr2, const Polynomial& rhs) :
         lhs(lhs), mid(mid), rhs(rhs), opr1(opr1), opr2(opr2) {}

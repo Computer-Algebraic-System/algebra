@@ -93,7 +93,7 @@ public:
     constexpr Fraction operator^(const Fraction& value) const { return Fraction(*this) ^= value; }
 
     constexpr std::strong_ordering operator<=>(const Fraction& value) const {
-        return static_cast<int128_t>(numerator) * value.denominator <=> static_cast<int128_t>(value.numerator) * denominator;
+        return static_cast<__int128_t>(numerator) * value.denominator <=> static_cast<__int128_t>(value.numerator) * denominator;
     }
 
     template <typename T>
