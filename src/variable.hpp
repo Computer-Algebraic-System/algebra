@@ -37,15 +37,15 @@ public:
         if (coefficient == 0) {
             variables.clear();
         } else {
-            for (const Var& var : value.variables) {
-                const auto itr = std::ranges::find(variables, var.name, &Var::name);
+            for (const auto& [name, exponent] : value.variables) {
+                const auto itr = std::ranges::find(variables, name, &Var::name);
 
                 if (itr != variables.end()) {
-                    if ((itr->exponent += var.exponent) == 0) {
+                    if ((itr->exponent += exponent) == 0) {
                         variables.erase(itr);
                     }
                 } else {
-                    variables.push_back(var);
+                    variables.emplace_back(name, exponent);
                 }
             }
             std::ranges::sort(variables);
@@ -62,15 +62,15 @@ public:
     Variable& operator/=(const Variable& value) {
         coefficient /= value.coefficient;
 
-        for (const Var& var : value.variables) {
-            const auto itr = std::ranges::find(variables, var.name, &Var::name);
+        for (const auto& [name, exponent] : value.variables) {
+            const auto itr = std::ranges::find(variables, name, &Var::name);
 
             if (itr != variables.end()) {
-                if ((itr->exponent -= var.exponent) == 0) {
+                if ((itr->exponent -= exponent) == 0) {
                     variables.erase(itr);
                 }
             } else {
-                variables.emplace_back(var.name, -var.exponent);
+                variables.emplace_back(name, -exponent);
             }
         }
         std::ranges::sort(variables);
@@ -95,7 +95,7 @@ public:
     Variable operator^(const Fraction& value) const { return Variable(*this) ^= value; }
 
     std::strong_ordering operator<=>(const Variable& value) const {
-        const bool is_const = variables.empty(), value_const = value.variables.empty();
+        const bool is_const = is_fraction(), value_const = value.is_fraction();
 
         if (is_const != value_const) {
             return is_const ? std::strong_ordering::greater : std::strong_ordering::less;
@@ -110,7 +110,7 @@ public:
 
         for (const auto& [variable, value] : values) {
             assert(!variable.variables.empty());
-            const std::string name = variable.variables.front().name;
+            const std::string& name = variable.variables.front().name;
             const auto itr = std::ranges::lower_bound(res.variables, name, {}, &Var::name);
 
             if (itr != res.variables.end() && itr->name == name) {
@@ -128,10 +128,6 @@ public:
     Variable basis() const {
         Variable res = *this;
         res.coefficient = 1;
-
-        for (auto& [_, exponent] : res.variables) {
-            exponent = 1;
-        }
         return res;
     }
 
@@ -158,8 +154,10 @@ public:
 
             for (const auto& [name, exponent] : variables) {
                 res.push_back(name.front());
-                res.append("_{").append(name.substr(1)).push_back('}');
 
+                if (name.size() > 1) {
+                    res.append("_{").append(name.substr(1)).push_back('}');
+                }
                 if (exponent != 1) {
                     res.append("^{").append(exponent.to_latex()).push_back('}');
                 }
@@ -188,10 +186,9 @@ public:
             } else {
                 res.append(std::to_string(coefficient.numerator));
             }
-            res.append(convert()).append("}{").append(std::to_string(coefficient.denominator)).push_back('}');
-            return res;
+            return res.append(convert()).append("}{").append(std::to_string(coefficient.denominator)).append("}");
         }
-        return coefficient.to_latex() + convert();
+        return coefficient.to_latex().append(convert());
     }
 
     constexpr explicit operator Fraction() const {
@@ -202,7 +199,9 @@ public:
 
 constexpr algebra::Variable operator*(const algebra::Fraction& value, const algebra::Variable& variable) { return variable * value; }
 
-constexpr algebra::Variable operator/(const algebra::Fraction& value, const algebra::Variable& variable) { return variable / value; }
+constexpr algebra::Variable operator/(const algebra::Fraction& value, const algebra::Variable& variable) {
+    return algebra::Variable(value) / variable;
+}
 
 namespace std {
     inline algebra::Variable abs(algebra::Variable variable) {
@@ -261,10 +260,9 @@ namespace std {
             } else {
                 res.append(to_string(variable.coefficient.numerator));
             }
-            res.append(format(variable)).append("/").append(to_string(variable.coefficient.denominator));
-            return res;
+            return res.append(format(variable)).append("/").append(to_string(variable.coefficient.denominator));
         }
-        return to_string(variable.coefficient) + format(variable);
+        return to_string(variable.coefficient).append(format(variable));
     }
 } // namespace std
 

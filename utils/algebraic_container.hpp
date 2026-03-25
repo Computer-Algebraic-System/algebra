@@ -51,7 +51,7 @@ public:
 
     AlgebraicContainer(const T& value) : numerator(value), denominator(1) { simplify(); }
 
-    AlgebraicContainer(const AlgebraicExpression<T>& numerator, const AlgebraicExpression<T>& denominator) :
+    AlgebraicContainer(const AlgebraicExpression<T>& numerator, const AlgebraicExpression<T>& denominator = {1}) :
         numerator(numerator), denominator(denominator) {
         simplify();
     }

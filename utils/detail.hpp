@@ -17,11 +17,8 @@ namespace algebra {
                 output = Output::LATEX;
                 filename = name;
                 file.open(filename);
-                *this << "\\documentclass{article}\n";
-                *this << "\\usepackage{amsmath}\n";
-                *this << "\\usepackage{graphicx}\n";
-                *this << "\\renewcommand{\\arraystretch}{1.5}\n";
-                *this << "\\begin{document}\n";
+                file << "\\documentclass{article}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{"
+                        "document}\n";
             }
 
             template <typename T>
@@ -73,10 +70,17 @@ namespace algebra {
                     {
                         *this << "\\end{document}\n";
                         file.close();
-                        std::string base = filename.substr(0, filename.size() - 4);
+                        const std::string base = filename.substr(0, filename.size() - 4);
                         std::string command("pdflatex -interaction=nonstopmode ");
-                        command.append(filename).append(" > /dev/null 2>&1 && rm -f ").append(base).append(".log ").append(base).append(".aux");
-                        system(command.c_str());
+                        system(command.append(filename)
+                                   .append(" > /dev/null 2>&1 && rm -f ")
+                                   .append(base)
+                                   .append(".log ")
+                                   .append(base)
+                                   .append(".aux ")
+                                   .append(base)
+                                   .append(".tex")
+                                   .c_str());
                         break;
                     }
 
@@ -120,22 +124,21 @@ namespace algebra {
             case RelationalOperator::GE:
                 return RelationalOperator::LE;
 
-            default:
+            case RelationalOperator::EQ:
                 return RelationalOperator::EQ;
             }
+            std::unreachable();
         }
 
         inline std::vector<std::vector<int>> generate_combinations(const int n, const int k) {
             std::vector<int> current;
             std::vector<std::vector<int>> res;
-
             const auto inner = [](auto&& self, const int start, const int a, const int b, std::vector<int>& curr,
                                   std::vector<std::vector<int>>& ans) -> void {
                 if (curr.size() == b) {
                     ans.push_back(curr);
                     return;
                 }
-
                 for (int i = start; i < a; i++) {
                     curr.push_back(i);
                     self(self, i + 1, a, b, curr, ans);

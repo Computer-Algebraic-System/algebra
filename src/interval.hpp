@@ -21,18 +21,9 @@ public:
 
     Interval operator+(const Variable& value) const { return *this + Polynomial(value); }
 
-    Interval& operator+=(const Polynomial& value) {
-        lhs += value;
-        mid += value;
-        rhs += value;
-        return *this;
-    }
+    Interval& operator+=(const Polynomial& value) { return *this = *this + value; }
 
-    Interval operator+(const Polynomial& value) const {
-        Interval res = *this;
-        res += value;
-        return res;
-    }
+    Interval operator+(const Polynomial& value) const { return Interval(lhs + value, opr1, mid + value, opr2, rhs + value); }
 
     Interval& operator-=(const Fraction& value) { return *this += -value; }
 
@@ -54,35 +45,21 @@ public:
 
     Interval operator*(const Variable& value) const { return *this * Polynomial(value); }
 
-    Interval& operator*=(const Polynomial& value) {
-        lhs *= value;
-        mid *= value;
-        rhs *= value;
-        return *this;
-    }
+    Interval& operator*=(const Polynomial& value) { return *this = *this * value; }
 
-    Interval operator*(const Polynomial& value) const {
-        Interval res = *this;
-        res *= value;
-        return res;
-    }
+    Interval operator*(const Polynomial& value) const { return Interval(lhs * value, opr1, mid * value, opr2, rhs * value); }
 
-    Interval& operator/=(const Fraction& value) { return *this /= Variable(value); }
+    Interval& operator/=(const Fraction& value) { return *this /= Polynomial(value); }
 
-    Interval operator/(const Fraction& value) const { return *this / Variable(value); }
+    Interval operator/(const Fraction& value) const { return *this / Polynomial(value); }
 
-    Interval& operator/=(const Variable& value) {
-        lhs /= value;
-        mid /= value;
-        rhs /= value;
-        return *this;
-    }
+    Interval& operator/=(const Variable& value) { return *this /= Polynomial(value); }
 
-    Interval operator/(const Variable& value) const {
-        Interval res = *this;
-        res /= value;
-        return res;
-    }
+    Interval operator/(const Variable& value) const { return *this / Polynomial(value); }
+
+    Interval& operator/=(const Polynomial& value) { return *this = *this / value; }
+
+    Interval operator/(const Polynomial& value) const { return Interval(lhs / value, opr1, mid / value, opr2, rhs / value); }
 
     Interval differentiate(const Variable& wrt) const { return {lhs.differentiate(wrt), opr1, mid.differentiate(wrt), opr2, rhs.differentiate(wrt)}; }
 

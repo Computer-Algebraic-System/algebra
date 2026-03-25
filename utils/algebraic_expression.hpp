@@ -1,7 +1,7 @@
 #pragma once
 
 template <typename T>
-    requires std::is_same_v<T, algebra::Variable>
+    requires std::is_same_v<T, algebra::Variable> || std::is_same_v<T, algebra::Function>
 class algebra::detail::AlgebraicExpression {
 public:
     std::vector<T> terms;

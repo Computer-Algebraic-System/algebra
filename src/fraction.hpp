@@ -104,11 +104,7 @@ public:
 
     constexpr bool operator==(const Fraction& value) const = default;
 
-    template <typename T>
-        requires std::integral<T> || std::floating_point<T>
-    constexpr bool operator==(const T& value) const {
-        return static_cast<T>(*this) == value;
-    }
+    constexpr bool operator==(const double value) const { return static_cast<double>(*this) == value; }
 
     template <typename T>
         requires std::integral<T> || std::floating_point<T>
@@ -118,7 +114,7 @@ public:
 
     constexpr bool is_infinity() const;
 
-    Fraction reciprocate() const { return {denominator, numerator}; }
+    Fraction reciprocate() const { return Fraction(denominator, numerator); }
 
     std::string to_latex() const;
 };
@@ -155,7 +151,7 @@ namespace std {
     }
 
     inline algebra::Fraction gcd(const algebra::Fraction& lhs, const algebra::Fraction& rhs) {
-        return {gcd(lhs.numerator, rhs.numerator), lcm(lhs.denominator, rhs.denominator)};
+        return algebra::Fraction(gcd(lhs.numerator, rhs.numerator), lcm(lhs.denominator, rhs.denominator));
     }
 
     inline algebra::Fraction& max(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs < rhs ? rhs : lhs; }

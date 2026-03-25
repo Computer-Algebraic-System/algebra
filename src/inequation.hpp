@@ -1,14 +1,17 @@
 #pragma once
 
 class algebra::Inequation {
-
 public:
     RelationalOperator opr;
     Polynomial lhs, rhs;
 
     Inequation() = default;
 
-    Inequation(const Polynomial& polynomial, const RelationalOperator opr, const Polynomial& rhs) : opr(opr), lhs(polynomial), rhs(rhs) {}
+    Inequation(const Polynomial& lhs, const RelationalOperator opr, const Polynomial& rhs) : opr(opr), lhs(lhs), rhs(rhs) {
+        const Polynomial temp = lhs / rhs;
+        this->lhs = temp.numerator;
+        this->rhs = temp.denominator;
+    }
 
     Inequation& operator+=(const Fraction& value) { return *this += Polynomial(value); }
 
@@ -18,37 +21,21 @@ public:
 
     Inequation operator+(const Variable& value) const { return *this + Polynomial(value); }
 
-    Inequation& operator+=(const Polynomial& value) {
-        lhs += value;
-        rhs += value;
-        return *this;
-    }
+    Inequation& operator+=(const Polynomial& value) { return *this = *this + value; }
 
-    Inequation operator+(const Polynomial& value) const {
-        Inequation inequation = *this;
-        inequation += value;
-        return inequation;
-    }
+    Inequation operator+(const Polynomial& value) const { return Inequation(lhs + value, opr, rhs + value); }
 
-    Inequation& operator-=(const Fraction& value) { return *this -= Polynomial(value); }
+    Inequation& operator-=(const Fraction& value) { return *this += -value; }
 
-    Inequation operator-(const Fraction& value) const { return *this - Polynomial(value); }
+    Inequation operator-(const Fraction& value) const { return *this + -value; }
 
-    Inequation& operator-=(const Variable& value) { return *this -= Polynomial(value); }
+    Inequation& operator-=(const Variable& value) { return *this += -value; }
 
-    Inequation operator-(const Variable& value) const { return *this - Polynomial(value); }
+    Inequation operator-(const Variable& value) const { return *this + -value; }
 
-    Inequation& operator-=(const Polynomial& value) {
-        lhs -= value;
-        rhs -= value;
-        return *this;
-    }
+    Inequation& operator-=(const Polynomial& value) { return *this += -value; }
 
-    Inequation operator-(const Polynomial& value) const {
-        Inequation inequation = *this;
-        inequation -= value;
-        return inequation;
-    }
+    Inequation operator-(const Polynomial& value) const { return *this + -value; }
 
     Inequation& operator*=(const Fraction& value) { return *this *= Polynomial(value); }
 
@@ -58,33 +45,21 @@ public:
 
     Inequation operator*(const Variable& value) const { return *this * Polynomial(value); }
 
-    Inequation& operator*=(const Polynomial& value) {
-        lhs *= value;
-        rhs *= value;
-        return *this;
-    }
+    Inequation& operator*=(const Polynomial& value) { return *this = *this * value; }
 
-    Inequation operator*(const Polynomial& value) const {
-        Inequation inequation = *this;
-        inequation *= value;
-        return inequation;
-    }
+    Inequation operator*(const Polynomial& value) const { return Inequation(lhs * value, opr, rhs * value); }
 
-    Inequation& operator/=(const Fraction& value) { return *this /= Variable(value); }
+    Inequation& operator/=(const Fraction& value) { return *this /= Polynomial(value); }
 
-    Inequation operator/(const Fraction& value) const { return *this / Variable(value); }
+    Inequation operator/(const Fraction& value) const { return *this / Polynomial(value); }
 
-    Inequation& operator/=(const Variable& value) {
-        lhs /= value;
-        rhs /= value;
-        return *this;
-    }
+    Inequation& operator/=(const Variable& value) { return *this /= Polynomial(value); }
 
-    Inequation operator/(const Variable& value) const {
-        Inequation inequation = *this;
-        inequation /= value;
-        return inequation;
-    }
+    Inequation operator/(const Variable& value) const { return *this / Polynomial(value); }
+
+    Inequation& operator/=(const Polynomial& value) { return *this = *this / value; }
+
+    Inequation operator/(const Polynomial& value) const { return Inequation(lhs / value, opr, rhs / value); }
 
     Inequation invert() const {
         Inequation res = *this;
@@ -133,7 +108,7 @@ public:
         return res;
     }
 
-    Inequation differentiate(const Variable& wrt) const { return {lhs.differentiate(wrt), opr, rhs.differentiate(wrt)}; }
+    Inequation differentiate(const Variable& wrt) const { return Inequation(lhs.differentiate(wrt), opr, rhs.differentiate(wrt)); }
 
     std::string to_latex() const { return lhs.to_latex().append(" ").append(detail::to_latex(opr)).append(" ").append(rhs.to_latex()); }
 
@@ -270,7 +245,7 @@ inline algebra::Equation operator==(const algebra::Variable& lhs, const algebra:
 
 namespace std {
     inline string to_string(const algebra::Inequation& inequation) {
-        return to_string(inequation.lhs).append(" ").append(to_string(inequation.opr)).append(" ").append(to_string(inequation.rhs).append("\n"));
+        return to_string(inequation.lhs).append(" ").append(to_string(inequation.opr)).append(" ").append(to_string(inequation.rhs));
     }
 } // namespace std
 

@@ -5,6 +5,8 @@ public:
     Fraction x, y;
 
     std::strong_ordering operator<=>(const Point&) const = default;
+
+    std::string to_latex() const { return std::string("\\left(").append(x.to_latex()).append(",").append(y.to_latex()).append("\\right)"); }
 };
 
 namespace std {

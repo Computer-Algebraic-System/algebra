@@ -67,7 +67,7 @@ namespace algebra {
 #include "src/variable.hpp"
 #include "utils/algebraic_expression.hpp"
 #include "utils/algebraic_container.hpp"
-#include "src/function.hpp"
+// #include "src/function.hpp"
 #include "src/inequation.hpp"
 #include "src/interval.hpp"
 #include "src/graph.hpp"
