@@ -47,6 +47,7 @@ namespace algebra {
         std::ostream& operator<<(std::ostream&, const AlgebraicExpression<T>&);
 
         template <typename T>
+            requires std::is_same_v<T, Variable> || std::is_same_v<T, Function>
         class AlgebraicContainer;
         template <typename T>
         std::ostream& operator<<(std::ostream&, const AlgebraicContainer<T>&);

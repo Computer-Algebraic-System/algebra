@@ -8,9 +8,11 @@ public:
     Inequation() = default;
 
     Inequation(const Polynomial& lhs, const RelationalOperator opr, const Polynomial& rhs) : opr(opr), lhs(lhs), rhs(rhs) {
-        const Polynomial temp = lhs / rhs;
-        this->lhs = temp.numerator;
-        this->rhs = temp.denominator;
+        if (!rhs.is_fraction() || !static_cast<Fraction>(rhs) == 0) {
+            const Polynomial temp = lhs / rhs;
+            this->lhs = temp.numerator;
+            this->rhs = temp.denominator;
+        }
     }
 
     Inequation& operator+=(const Fraction& value) { return *this += Polynomial(value); }

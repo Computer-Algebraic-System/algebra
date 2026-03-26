@@ -1,6 +1,7 @@
 #pragma once
 
 template <typename T>
+    requires std::is_same_v<T, algebra::Variable> || std::is_same_v<T, algebra::Function>
 class algebra::detail::AlgebraicContainer {
     void simplify() {
         assert(!denominator.terms.empty());

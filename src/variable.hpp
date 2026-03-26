@@ -15,10 +15,6 @@ public:
 
     Variable() = default;
 
-    Variable(nullptr_t) = delete;
-
-    Variable(const char* name) : Variable(1, name) {}
-
     Variable(const std::string& name) : Variable(1, name) {}
 
     Variable(const Fraction& coefficient) : coefficient(coefficient) {}

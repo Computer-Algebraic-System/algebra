@@ -4,6 +4,7 @@ namespace algebra {
     namespace detail {
         struct FormatSettings {
             enum class Output { CONSOLE, FILE, LATEX } output = Output::CONSOLE;
+            bool was_math = false;
             std::ofstream file;
             std::string filename;
 
@@ -31,8 +32,10 @@ namespace algebra {
                 case Output::LATEX:
                     if constexpr (requires(const T& obj) { obj.to_latex(); }) {
                         fmt.file << "\\begin{align*}\n" << object.to_latex() << "\\end{align*}\n";
+                        fmt.was_math = true;
                     } else {
                         fmt.file << object;
+                        fmt.was_math = false;
                     }
                     break;
 
@@ -50,7 +53,9 @@ namespace algebra {
                     break;
 
                 case Output::LATEX:
-                    fmt.file << "\\\\\n";
+                    if (!fmt.was_math) {
+                        fmt.file << "\\\\\n";
+                    }
                     break;
 
                 case Output::FILE:
