@@ -15,7 +15,11 @@ public:
 
     Variable() = default;
 
-    Variable(const std::string& name) : coefficient(1), variables({{name, 1}}) {}
+    Variable(nullptr_t) = delete;
+
+    Variable(const char* name) : Variable(1, name) {}
+
+    Variable(const std::string& name) : Variable(1, name) {}
 
     Variable(const Fraction& coefficient) : coefficient(coefficient) {}
 
@@ -132,10 +136,11 @@ public:
     }
 
     Variable differentiate(const Variable& wrt) const {
+        assert(!wrt.variables.empty());
         Variable res = *this;
         const auto itr = std::ranges::find(res.variables, wrt.variables.front().name, &Var::name);
 
-        if (itr != res.variables.end() && itr->name == wrt.variables.front().name) {
+        if (itr != res.variables.end()) {
             res.coefficient *= itr->exponent;
 
             if ((itr->exponent -= 1) == 0) {
@@ -210,11 +215,11 @@ namespace std {
     }
 
     inline string to_string(const algebra::Variable& variable) {
-        auto format = [](const algebra::Variable& var) -> string {
-            const int size = var.variables.size();
+        auto format = [&variable] -> string {
+            const int size = variable.variables.size();
             std::string res;
 
-            for (const auto& [name, exponent] : var.variables) {
+            for (const auto& [name, exponent] : variable.variables) {
                 if (exponent != 1 && size > 1) {
                     res.push_back('(');
                 }
@@ -245,10 +250,10 @@ namespace std {
             return "0";
         }
         if (variable.coefficient == 1) {
-            return format(variable);
+            return format();
         }
         if (variable.coefficient == -1) {
-            return '-' + format(variable);
+            return '-' + format();
         }
         if (variable.coefficient.denominator != 1) {
             string res;
@@ -260,9 +265,9 @@ namespace std {
             } else {
                 res.append(to_string(variable.coefficient.numerator));
             }
-            return res.append(format(variable)).append("/").append(to_string(variable.coefficient.denominator));
+            return res.append(format()).append("/").append(to_string(variable.coefficient.denominator));
         }
-        return to_string(variable.coefficient).append(format(variable));
+        return to_string(variable.coefficient).append(format());
     }
 } // namespace std
 

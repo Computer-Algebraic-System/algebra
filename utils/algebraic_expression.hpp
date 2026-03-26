@@ -32,7 +32,7 @@ public:
     AlgebraicExpression& operator+=(const AlgebraicExpression& other) {
         for (const T& value : other.terms) {
             const auto itr = std::ranges::lower_bound(terms, value, [](const T& lhs, const T& rhs) -> bool {
-                const bool lhs_const = lhs.variables.empty(), rhs_const = rhs.variables.empty();
+                const bool lhs_const = lhs.is_fraction(), rhs_const = rhs.is_fraction();
 
                 if (lhs_const != rhs_const) {
                     return !lhs_const;
