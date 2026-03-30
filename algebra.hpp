@@ -58,7 +58,8 @@ namespace algebra {
         std::vector<std::vector<int>> generate_combinations(int, int);
     } // namespace detail
 
-    using Polynomial = detail::AlgebraicContainer<Variable>;
+    using SimplePolynomial = detail::AlgebraicExpression<Variable>;
+    using RationalPolynomial = detail::AlgebraicContainer<Variable>;
     using Expression = detail::AlgebraicContainer<Function>;
 } // namespace algebra
 

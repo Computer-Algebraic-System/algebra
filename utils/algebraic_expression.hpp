@@ -155,7 +155,43 @@ public:
 };
 
 template <typename T>
+algebra::detail::AlgebraicExpression<T> operator+(const T& lhs, const T& rhs) {
+    return algebra::detail::AlgebraicExpression(lhs) + rhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator+(const T& lhs, const algebra::Fraction& rhs) {
+    return algebra::detail::AlgebraicExpression(lhs) + rhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator+(const algebra::Fraction& lhs, const T& rhs) {
+    return rhs + lhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator-(const T& lhs, const T& rhs) {
+    return -rhs + lhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator-(const T& lhs, const algebra::Fraction& rhs) {
+    return -rhs + lhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator-(const algebra::Fraction& lhs, const T& rhs) {
+    return -rhs + lhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator+(const algebra::Fraction& lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
+    return rhs + lhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator-(const T& lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
+    return -rhs + lhs;
+}
+template <typename T>
 algebra::detail::AlgebraicExpression<T> operator*(const algebra::Fraction& lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
+    return rhs * lhs;
+}
+template <typename T>
+algebra::detail::AlgebraicExpression<T> operator*(const T& lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
     return rhs * lhs;
 }
 

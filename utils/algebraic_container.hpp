@@ -13,9 +13,20 @@ class algebra::detail::AlgebraicContainer {
         }
         Fraction coefficient_gcd = denominator.terms.front().coefficient;
         std::map<std::string, Fraction> value_gcd;
+        T factor(1);
 
-        for (const auto variable : denominator.terms.front().variables) {
-            value_gcd.emplace(variable.name, variable.exponent);
+        for (const T& value : numerator.terms) {
+            for (const auto& [name, exponent] : value.variables) {
+                if (exponent < 0) {
+                    factor *= T(name) ^ -exponent;
+                }
+            }
+        }
+        numerator *= factor;
+        denominator *= factor;
+
+        for (const auto& [name, exponent] : denominator.terms.front().variables) {
+            value_gcd.emplace(name, exponent);
         }
         for (const T& value : std::array{numerator.terms, denominator.terms} | std::views::join) {
             coefficient_gcd = std::gcd(coefficient_gcd, value.coefficient);
@@ -30,7 +41,7 @@ class algebra::detail::AlgebraicContainer {
                 }
             }
         }
-        T factor = coefficient_gcd;
+        factor = coefficient_gcd;
 
         for (const auto& [name, exponent] : value_gcd) {
             factor *= T(name) ^ exponent;
@@ -165,18 +176,6 @@ public:
 };
 
 template <typename T>
-algebra::detail::AlgebraicContainer<T> operator+(const T& lhs, const T& rhs) {
-    return algebra::detail::AlgebraicContainer(lhs) + rhs;
-}
-template <typename T>
-algebra::detail::AlgebraicContainer<T> operator+(const T& lhs, const algebra::Fraction& rhs) {
-    return algebra::detail::AlgebraicContainer(lhs) + rhs;
-}
-template <typename T>
-algebra::detail::AlgebraicContainer<T> operator+(const algebra::Fraction& lhs, const T& rhs) {
-    return rhs + lhs;
-}
-template <typename T>
 algebra::detail::AlgebraicContainer<T> operator+(const algebra::Fraction& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return rhs + lhs;
 }
@@ -185,18 +184,6 @@ algebra::detail::AlgebraicContainer<T> operator+(const T& lhs, const algebra::de
     return rhs + lhs;
 }
 
-template <typename T>
-algebra::detail::AlgebraicContainer<T> operator-(const T& lhs, const T& rhs) {
-    return -rhs + lhs;
-}
-template <typename T>
-algebra::detail::AlgebraicContainer<T> operator-(const T& lhs, const algebra::Fraction& rhs) {
-    return -rhs + lhs;
-}
-template <typename T>
-algebra::detail::AlgebraicContainer<T> operator-(const algebra::Fraction& lhs, const T& rhs) {
-    return -rhs + lhs;
-}
 template <typename T>
 algebra::detail::AlgebraicContainer<T> operator-(const algebra::Fraction& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return -rhs + lhs;
@@ -213,6 +200,22 @@ algebra::detail::AlgebraicContainer<T> operator*(const algebra::Fraction& lhs, c
 template <typename T>
 algebra::detail::AlgebraicContainer<T> operator*(const T& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return rhs * lhs;
+}
+
+template <typename T>
+algebra::detail::AlgebraicContainer<T> operator/(const algebra::Fraction& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
+    return algebra::detail::AlgebraicContainer<T>(lhs) / rhs;
+}
+template <typename T>
+algebra::detail::AlgebraicContainer<T> operator/(const T& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
+    return algebra::detail::AlgebraicContainer<T>(lhs) / rhs;
+}
+
+
+template <typename T>
+algebra::detail::AlgebraicContainer<T> operator/(const algebra::detail::AlgebraicExpression<T>& lhs,
+                                                 const algebra::detail::AlgebraicExpression<T>& rhs) {
+    return algebra::detail::AlgebraicContainer(lhs, rhs);
 }
 
 namespace std {

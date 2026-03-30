@@ -30,15 +30,15 @@ public:
         const Fraction increment = limit / 100;
         int actual_inequation_size = inequations_size;
         std::string x;
-        std::vector<Polynomial> simplified(inequations_size);
+        std::vector<SimplePolynomial> simplified(inequations_size);
         std::vector<Fraction> non_ys(inequations_size);
         std::vector<std::pair<Variable, Fraction>> substituent(1, {Variable("x"), 0});
         std::vector<std::vector<int>> combinations = detail::generate_combinations(inequations_size, 2);
         std::vector<std::string> ys(inequations_size);
 
         for (int i = 0; i < inequations_size; i++) {
-            if (std::ranges::contains(std::array{inequations[i].lhs.numerator.terms, inequations[i].rhs.numerator.terms} | std::views::join,
-                                      Variable("y"), &Variable::basis)) {
+            if (std::ranges::contains(std::array{inequations[i].lhs.terms, inequations[i].rhs.terms} | std::views::join, Variable("y"),
+                                      &Variable::basis)) {
                 simplified[i] = inequations[i].solve_for(Variable("y")).rhs;
                 non_ys[i] = inf;
             } else {

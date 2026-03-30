@@ -3,7 +3,7 @@
 using namespace algebra;
 
 int main() {
-    GLOBAL_FORMATTING.toggle_file("output.txt");
+    // GLOBAL_FORMATTING.toggle_file("output.txt");
     // GLOBAL_FORMATTING.toggle_latex("latex.tex");
     detail::FormatSettings& out = GLOBAL_FORMATTING;
     Variable x("x"), y("y"), z("z");

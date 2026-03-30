@@ -150,46 +150,44 @@ public:
     bool is_fraction() const { return variables.empty(); }
 
     std::string to_latex() const {
-        auto convert = [this]() -> std::string {
-            std::string res;
-
-            for (const auto& [name, exponent] : variables) {
-                res.push_back(name.front());
-
-                if (name.size() > 1) {
-                    res.append("_{").append(name.substr(1)).push_back('}');
-                }
-                if (exponent != 1) {
-                    res.append("^{").append(exponent.to_latex()).push_back('}');
-                }
-            }
-            return res;
-        };
         if (variables.empty()) {
             return coefficient.to_latex();
         }
         if (coefficient == 0) {
             return "0";
         }
-        if (coefficient == 1) {
-            return convert();
+        std::string res, denominator = "}{";
+        const bool fractional = std::ranges::find_if(
+                                    variables, [](const Fraction& exponent) -> bool { return exponent < 0; }, &Var::exponent) != variables.end() ||
+            coefficient.denominator != 1;
+
+        if (fractional) {
+            res.append("\\frac{");
         }
-        if (coefficient == -1) {
-            return '-' + convert();
+        if (std::abs(coefficient.numerator) == 1) {
+            if (coefficient.numerator == -1) {
+                res.push_back('-');
+            }
+        } else {
+            res.append(std::to_string(coefficient.numerator));
         }
         if (coefficient.denominator != 1) {
-            std::string res("\\frac{");
-
-            if (std::abs(coefficient.numerator) == 1) {
-                if (coefficient.numerator == -1) {
-                    res.push_back('-');
-                }
-            } else {
-                res.append(std::to_string(coefficient.numerator));
-            }
-            return res.append(convert()).append("}{").append(std::to_string(coefficient.denominator)).append("}");
+            denominator.append(std::to_string(coefficient.denominator));
         }
-        return coefficient.to_latex().append(convert());
+        for (const auto& [name, exponent] : variables) {
+            (exponent < 0 ? denominator : res).push_back(name.front());
+
+            if (name.size() > 1) {
+                (exponent < 0 ? denominator : res).append("_{").append(name.substr(1)).push_back('}');
+            }
+            if (std::abs(exponent) != 1) {
+                (exponent < 0 ? denominator : res).append("^{").append(std::abs(exponent).to_latex()).push_back('}');
+            }
+        }
+        if (fractional) {
+            res.append(denominator).push_back('}');
+        }
+        return res;
     }
 
     constexpr explicit operator Fraction() const {
@@ -211,59 +209,55 @@ namespace std {
     }
 
     inline string to_string(const algebra::Variable& variable) {
-        auto format = [&variable] -> string {
-            const int size = variable.variables.size();
-            std::string res;
-
-            for (const auto& [name, exponent] : variable.variables) {
-                if (exponent != 1 && size > 1) {
-                    res.push_back('(');
-                }
-                res.append(name);
-
-                if (exponent != 1) {
-                    res.push_back('^');
-
-                    if (exponent.denominator != 1) {
-                        res.push_back('(');
-                    }
-                    res.append(std::to_string(exponent));
-
-                    if (exponent.denominator != 1) {
-                        res.push_back(')');
-                    }
-                }
-                if (exponent != 1 && size > 1) {
-                    res.push_back(')');
-                }
-            }
-            return res;
-        };
         if (variable.variables.empty()) {
             return to_string(variable.coefficient);
         }
         if (variable.coefficient == 0) {
             return "0";
         }
-        if (variable.coefficient == 1) {
-            return format();
-        }
-        if (variable.coefficient == -1) {
-            return '-' + format();
+        string res, denominator;
+        const bool fractional = std::ranges::find_if(
+                                    variable.variables, [](const algebra::Fraction& exponent) -> bool { return exponent < 0; },
+                                    &algebra::Variable::Var::exponent) != variable.variables.end() ||
+            variable.coefficient.denominator != 1;
+        const int size = variable.variables.size();
+
+        if (std::abs(variable.coefficient.numerator) == 1) {
+            if (variable.coefficient.numerator == -1) {
+                res.push_back('-');
+            }
+        } else {
+            res.append(std::to_string(variable.coefficient.numerator));
         }
         if (variable.coefficient.denominator != 1) {
-            string res;
-
-            if (abs(variable.coefficient.numerator) == 1) {
-                if (variable.coefficient.numerator == -1) {
-                    res.push_back('-');
-                }
-            } else {
-                res.append(to_string(variable.coefficient.numerator));
-            }
-            return res.append(format()).append("/").append(to_string(variable.coefficient.denominator));
+            denominator.append(std::to_string(variable.coefficient.denominator));
         }
-        return to_string(variable.coefficient).append(format());
+        for (const auto& [name, exponent] : variable.variables) {
+            if (abs(exponent) != 1 && size > 1) {
+                (exponent < 0 ? denominator : res).push_back('(');
+            }
+            (exponent < 0 ? denominator : res).append(name);
+
+            if (abs(exponent) != 1) {
+                (exponent < 0 ? denominator : res).push_back('^');
+
+                if (exponent.denominator != 1) {
+                    (exponent < 0 ? denominator : res).push_back('(');
+                }
+                (exponent < 0 ? denominator : res).append(std::to_string(exponent));
+
+                if (exponent.denominator != 1) {
+                    (exponent < 0 ? denominator : res).push_back(')');
+                }
+            }
+            if (abs(exponent) != 1 && size > 1) {
+                (exponent < 0 ? denominator : res).push_back(')');
+            }
+        }
+        if (fractional) {
+            res.append("/").append(denominator);
+        }
+        return res;
     }
 } // namespace std
 
