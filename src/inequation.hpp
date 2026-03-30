@@ -12,6 +12,9 @@ public:
             const RationalPolynomial temp = lhs / rhs;
             this->lhs = temp.numerator;
             this->rhs = temp.denominator;
+        } else {
+            this->lhs = lhs.numerator;
+            this->rhs = rhs.numerator;
         }
     }
 
@@ -124,7 +127,7 @@ class algebra::Equation : public Inequation {
 public:
     Equation() = default;
 
-    Equation(const SimplePolynomial& lhs, const SimplePolynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
+    Equation(const RationalPolynomial& lhs, const RationalPolynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
 
     Equation swap() const {
         Equation res = *this;

@@ -166,6 +166,10 @@ public:
 
     explicit operator Fraction() const {
         assert(is_fraction());
+
+        if (numerator.terms.empty()) {
+            return 0;
+        }
         return static_cast<Fraction>(static_cast<T>(numerator));
     }
 
