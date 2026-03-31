@@ -11,79 +11,61 @@ except ModuleNotFoundError:
     import numpy as np
     import matplotlib.pyplot as plt
 
-x = np.array(list(eval(sys.argv[2])))
-le_constraints = []
-ge_constraints = []
-k = 4
 
-for i in range(int(sys.argv[3])):
-    y = np.array(list(eval(sys.argv[k])))
-    label = sys.argv[k + 1]
-    plt.plot(x, y, label=label)
-    expr = label.replace(" ", "")
-    y_pos = expr.find("y")
+def plot(
+        file_name: str, x_vals: list[float], y_curves: list[tuple[list[float], str]], points: list[tuple[str, str]],
+        vertical_lines: list[tuple[float, str]]
+) -> int:
+    fig, ax = plt.subplots()
+    x = np.array(x_vals)
+    le_constraints, ge_constraints = [], []
 
-    if y_pos <= 0:
-        y_positive = True
-    else:
-        y_positive = expr[y_pos - 1] != "-"
+    for y_vals, label in y_curves:
+        y = np.array(y_vals)
+        ax.plot(x, y, label=label)
+        expr = label.replace(" ", "")
+        y_pos = expr.find("y")
+        y_positive = y_pos <= 0 or expr[y_pos - 1] != "-"
 
-    if "<=" in expr:
-        if y_positive:
-            le_constraints.append(y)
-        else:
-            ge_constraints.append(y)
+        if "<=" in expr:
+            (le_constraints if y_positive else ge_constraints).append(y)
 
-    elif ">=" in expr:
-        if y_positive:
-            ge_constraints.append(y)
-        else:
-            le_constraints.append(y)
+        elif ">=" in expr:
+            (ge_constraints if y_positive else le_constraints).append(y)
 
-    k += 2
+    upper = np.minimum.reduce(le_constraints) if le_constraints else np.full_like(x, np.inf)
+    lower = np.maximum.reduce(ge_constraints) if ge_constraints else np.zeros_like(x)
+    lower = np.maximum(lower, 0)
+    mask = np.ones_like(x, dtype=bool)
+    x_le, x_ge = [], []
 
-upper = np.minimum.reduce(le_constraints) if le_constraints else np.full_like(x, np.inf)
-lower = np.maximum.reduce(ge_constraints) if ge_constraints else np.zeros_like(x)
-lower = np.maximum(lower, 0)
-mask = np.ones_like(x, dtype=bool)
+    for px, py in points:
+        ax.scatter(eval(px), eval(py), s=80)
+        ax.text(eval(px) + 0.05, eval(py) + 0.05, f"({px}, {py})")
 
-for i in range(int(sys.argv[k])):
-    k += 1
-    px, py = sys.argv[k].split(',')
+    for rhs, label in vertical_lines:
+        ax.axvline(rhs, label=label)
 
-    plt.scatter(eval(px), eval(py), s=80)
-    plt.text(eval(px) + 0.05, eval(py) + 0.05, f"({px}, {py})")
+        if "<=" in label:
+            x_le.append(rhs)
 
-x_le = []
-x_ge = []
-k += 1
+        elif ">=" in label:
+            x_ge.append(rhs)
 
-for i in range(int(sys.argv[k])):
-    k += 1
-    rhs = eval(sys.argv[k])
-    k += 1
-    label = sys.argv[k]
-    plt.axvline(rhs, label=label)
+    if x_le:
+        mask &= (x <= min(x_le))
 
-    if "<=" in label:
-        x_le.append(rhs)
+    if x_ge:
+        mask &= (x >= max(x_ge))
 
-    elif ">=" in label:
-        x_ge.append(rhs)
+    ax.fill_between(x, lower, upper, where=(upper >= lower) & mask, alpha=0.25)
 
-if x_le:
-    mask &= (x <= min(x_le))
-
-if x_ge:
-    mask &= (x >= max(x_ge))
-
-plt.fill_between(x, lower, upper, where=(upper >= lower) & mask, alpha=0.25)
-
-plt.xlabel("x axis")
-plt.ylabel("y axis")
-plt.grid(True)
-plt.xlim(left=0)
-plt.ylim(bottom=0)
-plt.legend()
-plt.savefig(sys.argv[1], dpi=300)
-sys.exit(1 if np.isinf(upper).any() else 0)
+    ax.set_xlabel("x axis")
+    ax.set_ylabel("y axis")
+    ax.grid(True)
+    ax.set_xlim(left=0)
+    ax.set_ylim(bottom=0)
+    ax.legend()
+    fig.savefig(file_name, dpi=300)
+    plt.close(fig)
+    return 1 if np.isinf(upper).any() else 0

@@ -3,10 +3,13 @@
 #include <assert.h>
 #include <cmath>
 #include <complex>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <numeric>
+#include <pybind11/embed.h>
+#include <pybind11/stl.h>
 #include <ranges>
 #include <utility>
 #include <vector>
@@ -60,7 +63,24 @@ namespace algebra {
 
     using SimplePolynomial = detail::AlgebraicExpression<Variable>;
     using RationalPolynomial = detail::AlgebraicContainer<Variable>;
-    using Expression = detail::AlgebraicContainer<Function>;
+    using SimpleExpression = detail::AlgebraicExpression<Function>;
+    using RationalExpression = detail::AlgebraicContainer<Function>;
+
+    namespace detail {
+        enum class SerialClass : uint8_t {
+            FRACTION,
+            COMPLEX,
+            VARIABLE,
+            FUNCTION,
+            INEQUATION,
+            INTERVAL,
+            POINT,
+            SIMPLE_POLYNOMIAL,
+            RATIONAL_POLYNOMIAL,
+            SIMPLE_EXPRESSION,
+            RATIONAL_EXPRESSION,
+        };
+    } // namespace detail
 } // namespace algebra
 
 #include "utils/detail.hpp"

@@ -1,8 +1,12 @@
 #pragma once
 
 class algebra::Complex {
+    static constexpr auto serial_class = detail::SerialClass::COMPLEX;
+
 public:
     Fraction real, imag;
+
+    constexpr Complex() = default;
 
     constexpr Complex(const double value) : real(value) {}
 
@@ -103,10 +107,27 @@ public:
         }
         return res;
     }
+
+    void serialize(std::ofstream& out) const {
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        real.serialize(out);
+        imag.serialize(out);
+    }
+
+    static Complex deserialize(std::ifstream& in) {
+        detail::SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        Complex res;
+        res.real = Fraction::deserialize(in);
+        res.imag = Fraction::deserialize(in);
+        return res;
+    }
 };
 
 namespace std {
-    string to_string(const algebra::Complex& complex) {
+    inline string to_string(const algebra::Complex& complex) {
         if (complex == 0) {
             return "0";
         }

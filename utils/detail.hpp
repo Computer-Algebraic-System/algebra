@@ -4,7 +4,7 @@ namespace algebra {
     namespace detail {
         struct FormatSettings {
             enum class Output { CONSOLE, FILE, LATEX } output = Output::CONSOLE;
-            bool was_math = false;
+            bool was_math = false, verbose = true;
             std::ofstream file;
             std::string filename;
 
@@ -24,43 +24,47 @@ namespace algebra {
 
             template <typename T>
             friend FormatSettings& operator<<(FormatSettings& fmt, const T& object) {
-                switch (fmt.output) {
-                case Output::CONSOLE:
-                    std::cout << object;
-                    break;
+                if (fmt.verbose) {
+                    switch (fmt.output) {
+                    case Output::CONSOLE:
+                        std::cout << object;
+                        break;
 
-                case Output::LATEX:
-                    if constexpr (requires(const T& obj) { obj.to_latex(); }) {
-                        fmt.file << "\\begin{align*}\n" << object.to_latex() << "\\end{align*}\n";
-                        fmt.was_math = true;
-                    } else {
+                    case Output::LATEX:
+                        if constexpr (requires(const T& obj) { obj.to_latex(); }) {
+                            fmt.file << "\\begin{align*}\n" << object.to_latex() << "\\end{align*}\n";
+                            fmt.was_math = true;
+                        } else {
+                            fmt.file << object;
+                            fmt.was_math = false;
+                        }
+                        break;
+
+                    case Output::FILE:
                         fmt.file << object;
-                        fmt.was_math = false;
+                        break;
                     }
-                    break;
-
-                case Output::FILE:
-                    fmt.file << object;
-                    break;
                 }
                 return fmt;
             }
 
             friend FormatSettings& operator<<(FormatSettings& fmt, std::ostream& (*manip)(std::ostream&)) {
-                switch (fmt.output) {
-                case Output::CONSOLE:
-                    manip(std::cout);
-                    break;
+                if (fmt.verbose) {
+                    switch (fmt.output) {
+                    case Output::CONSOLE:
+                        manip(std::cout);
+                        break;
 
-                case Output::LATEX:
-                    if (!fmt.was_math) {
-                        fmt.file << "\\\\\n";
+                    case Output::LATEX:
+                        if (!fmt.was_math) {
+                            fmt.file << "\\\\\n";
+                        }
+                        break;
+
+                    case Output::FILE:
+                        manip(fmt.file);
+                        break;
                     }
-                    break;
-
-                case Output::FILE:
-                    manip(fmt.file);
-                    break;
                 }
                 return fmt;
             }

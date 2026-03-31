@@ -3,6 +3,8 @@
 template <typename T>
     requires std::is_same_v<T, algebra::Variable> || std::is_same_v<T, algebra::Function>
 class algebra::detail::AlgebraicContainer {
+    static constexpr SerialClass serial_class = std::is_same_v<T, Variable> ? SerialClass::RATIONAL_POLYNOMIAL : SerialClass::RATIONAL_EXPRESSION;
+
     void simplify() {
         assert(!denominator.terms.empty());
 
@@ -128,9 +130,7 @@ public:
         return AlgebraicContainer(numerator * value.denominator, denominator * value.numerator);
     }
 
-    std::map<T, Fraction> roots() const;
-
-    AlgebraicContainer substitute(const std::vector<std::pair<T, Fraction>>& values) const {
+    AlgebraicContainer substitute(const std::map<T, Fraction>& values) const {
         return AlgebraicContainer(numerator.substitute(values), denominator.substitute(values));
     }
 
@@ -176,6 +176,23 @@ public:
     explicit operator T() const {
         assert(is_value());
         return numerator.terms.front();
+    }
+
+    void serialize(std::ofstream& out) const {
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        numerator.serialize(out);
+        denominator.serialize(out);
+    }
+
+    static AlgebraicContainer deserialize(std::ifstream& in) {
+        SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        AlgebraicContainer res;
+        res.numerator = AlgebraicExpression<T>::deserialize(in);
+        res.denominator = AlgebraicExpression<T>::deserialize(in);
+        return res;
     }
 };
 

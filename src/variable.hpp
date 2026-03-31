@@ -1,6 +1,8 @@
 #pragma once
 
 class algebra::Variable {
+    static constexpr auto serial_class = detail::SerialClass::VARIABLE;
+
 public:
     struct Var {
         std::string name;
@@ -105,7 +107,7 @@ public:
 
     bool operator==(const Variable&) const = default;
 
-    Variable substitute(const std::vector<std::pair<Variable, Fraction>>& values) const {
+    Variable substitute(const std::map<Variable, Fraction>& values) const {
         Variable res = *this;
 
         for (const auto& [variable, value] : values) {
@@ -193,6 +195,42 @@ public:
     constexpr explicit operator Fraction() const {
         assert(is_fraction());
         return coefficient;
+    }
+
+    void serialize(std::ofstream& out) const {
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        coefficient.serialize(out);
+        size_t size = variables.size();
+        out.write(reinterpret_cast<const char*>(&size), sizeof(size));
+
+        for (const auto& [name, exponent] : variables) {
+            size = name.size();
+            out.write(reinterpret_cast<const char*>(&size), sizeof(size));
+            out.write(name.c_str(), size);
+            exponent.serialize(out);
+        }
+    }
+
+    static Variable deserialize(std::ifstream& in) {
+        detail::SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        Variable res;
+        size_t size;
+        res.coefficient = Fraction::deserialize(in);
+        in.read(reinterpret_cast<char*>(&size), sizeof(size));
+        res.variables.resize(size);
+
+        for (size_t i = 0; i < size; i++) {
+            size_t len;
+            in.read(reinterpret_cast<char*>(&len), sizeof(len));
+            std::string name(len, '\0');
+            in.read(&name[0], len);
+            res.variables[i].name = name;
+            res.variables[i].exponent = Fraction::deserialize(in);
+        }
+        return res;
     }
 };
 

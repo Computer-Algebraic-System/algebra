@@ -1,6 +1,8 @@
 #pragma once
 
 class algebra::Fraction {
+    static constexpr auto serial_class = detail::SerialClass::FRACTION;
+
     constexpr void simplify() {
         assert(denominator != 0);
 
@@ -99,7 +101,7 @@ public:
     template <typename T>
         requires std::integral<T> || std::floating_point<T>
     constexpr std::partial_ordering operator<=>(const T& value) const {
-        return static_cast<T>(*this) <=> value;
+        return static_cast<double>(*this) <=> value;
     }
 
     constexpr bool operator==(const Fraction& value) const = default;
@@ -110,6 +112,23 @@ public:
         requires std::integral<T> || std::floating_point<T>
     constexpr explicit operator T() const {
         return static_cast<T>(numerator) / denominator;
+    }
+
+    void serialize(std::ofstream& out) const {
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        out.write(reinterpret_cast<const char*>(&numerator), sizeof(numerator));
+        out.write(reinterpret_cast<const char*>(&denominator), sizeof(denominator));
+    }
+
+    static Fraction deserialize(std::ifstream& in) {
+        detail::SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        Fraction res;
+        in.read(reinterpret_cast<char*>(&res.numerator), sizeof(res.numerator));
+        in.read(reinterpret_cast<char*>(&res.denominator), sizeof(res.denominator));
+        return res;
     }
 
     constexpr bool is_infinity() const;

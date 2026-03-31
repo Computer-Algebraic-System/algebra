@@ -1,6 +1,8 @@
 #pragma once
 
 class algebra::Interval {
+    static constexpr auto serial_class = detail::SerialClass::INTERVAL;
+
 public:
     SimplePolynomial lhs, mid, rhs;
     RelationalOperator opr1, opr2;
@@ -61,6 +63,29 @@ public:
 
     std::string to_latex() const {
         return Inequation(lhs, opr1, mid).to_latex().append(" ").append(detail::to_latex(opr2)).append(" ").append(rhs.to_latex());
+    }
+
+    void serialize(std::ofstream& out) const {
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        lhs.serialize(out);
+        out.write(reinterpret_cast<const char*>(&opr1), sizeof(opr1));
+        mid.serialize(out);
+        out.write(reinterpret_cast<const char*>(&opr2), sizeof(opr2));
+        rhs.serialize(out);
+    }
+
+    static Interval deserialize(std::ifstream& in) {
+        detail::SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        Interval res;
+        res.lhs = SimplePolynomial::deserialize(in);
+        in.read(reinterpret_cast<char*>(&res.opr1), sizeof(res.opr1));
+        res.mid = SimplePolynomial::deserialize(in);
+        in.read(reinterpret_cast<char*>(&res.opr2), sizeof(res.opr2));
+        res.rhs = SimplePolynomial::deserialize(in);
+        return res;
     }
 };
 

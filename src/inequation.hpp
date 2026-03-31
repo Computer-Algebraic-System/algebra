@@ -1,6 +1,8 @@
 #pragma once
 
 class algebra::Inequation {
+    static constexpr auto serial_class = detail::SerialClass::INEQUATION;
+
 public:
     RelationalOperator opr;
     SimplePolynomial lhs, rhs;
@@ -81,7 +83,7 @@ public:
         return res;
     }
 
-    Inequation substitute(const std::vector<std::pair<Variable, Fraction>>& values) const {
+    Inequation substitute(const std::map<Variable, Fraction>& values) const {
         Inequation res = *this;
         res.lhs = res.lhs.substitute(values);
         res.rhs = res.rhs.substitute(values);
@@ -120,12 +122,37 @@ public:
 
     explicit operator bool() const { return detail::evaluate_relational_operator(static_cast<Fraction>(lhs), opr, static_cast<Fraction>(rhs)); }
 
-    explicit operator Equation() const;
+    void serialize(std::ofstream& out) const {
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        lhs.serialize(out);
+        out.write(reinterpret_cast<const char*>(&opr), sizeof(opr));
+        rhs.serialize(out);
+    }
+
+    static Inequation deserialize(std::ifstream& in) {
+        detail::SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        Inequation res;
+        res.lhs = SimplePolynomial::deserialize(in);
+        in.read(reinterpret_cast<char*>(&res.opr), sizeof(res.opr));
+        res.rhs = SimplePolynomial::deserialize(in);
+        return res;
+    }
+
+    operator Equation() const;
 };
 
 class algebra::Equation : public Inequation {
 public:
     Equation() = default;
+
+    Equation(const Variable& variable, const Fraction& fraction) {
+        lhs = variable;
+        opr = RelationalOperator::EQ;
+        rhs = fraction;
+    }
 
     Equation(const RationalPolynomial& lhs, const RationalPolynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
 

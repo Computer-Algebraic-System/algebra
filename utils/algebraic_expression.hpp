@@ -3,6 +3,8 @@
 template <typename T>
     requires std::is_same_v<T, algebra::Variable> || std::is_same_v<T, algebra::Function>
 class algebra::detail::AlgebraicExpression {
+    static constexpr SerialClass serial_class = std::is_same_v<T, Variable> ? SerialClass::SIMPLE_POLYNOMIAL : SerialClass::SIMPLE_EXPRESSION;
+
 public:
     std::vector<T> terms;
 
@@ -103,7 +105,7 @@ public:
 
     std::map<T, Fraction> roots() const;
 
-    AlgebraicExpression substitute(const std::vector<std::pair<T, Fraction>>& values) const {
+    AlgebraicExpression substitute(const std::map<T, Fraction>& values) const {
         AlgebraicExpression res;
 
         for (const T& value : terms) {
@@ -151,6 +153,32 @@ public:
     explicit operator T() const {
         assert(is_value());
         return terms.front();
+    }
+
+    void serialize(std::ofstream& out) const {
+        const size_t size = terms.size();
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        out.write(reinterpret_cast<const char*>(&size), sizeof(size));
+
+        for (const T& value : terms) {
+            value.serialize(out);
+        }
+    }
+
+    static AlgebraicExpression deserialize(std::ifstream& in) {
+        SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        AlgebraicExpression res;
+        size_t size;
+        in.read(reinterpret_cast<char*>(&size), sizeof(size));
+        res.terms.reserve(size);
+
+        for (size_t i = 0; i < size; i++) {
+            res.terms.push_back(T::deserialize(in));
+        }
+        return res;
     }
 };
 

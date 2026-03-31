@@ -1,12 +1,31 @@
 #pragma once
 
 class algebra::Point {
+    static constexpr auto serial_class = detail::SerialClass::POINT;
+
 public:
     Fraction x, y;
 
     std::strong_ordering operator<=>(const Point&) const = default;
 
     std::string to_latex() const { return std::string("\\left(").append(x.to_latex()).append(",").append(y.to_latex()).append("\\right)"); }
+
+    void serialize(std::ofstream& out) const {
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        x.serialize(out);
+        y.serialize(out);
+    }
+
+    static Point deserialize(std::ifstream& in) {
+        detail::SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        Point res;
+        res.x = Fraction::deserialize(in);
+        res.y = Fraction::deserialize(in);
+        return res;
+    }
 };
 
 namespace std {
@@ -18,76 +37,57 @@ namespace std {
 inline std::ostream& algebra::operator<<(std::ostream& out, const Point& point) { return out << std::to_string(point); }
 
 class algebra::Graph {
-public:
     inline static std::string interpreter_path = "/home/dream/.virtualenvs/python/bin/python";
-    inline static std::string source_path = "/home/dream/github/algebra/utils/graph.py";
 
-    // 0 -> Bounded | 1 -> Unbounded
-    // filename x n y1 ie1 y2 ie2 ... yn ien m p1 p2 ... pm k x1 ie1 x2 ie2 ... xk iek
+    static pybind11::object& get_plot_fn() {
+        static auto guard = [] -> pybind11::scoped_interpreter {
+            PyConfig config;
+            PyConfig_InitPythonConfig(&config);
+            PyConfig_SetString(&config, &config.program_name, Py_DecodeLocale(interpreter_path.c_str(), nullptr));
+            pybind11::scoped_interpreter interpret{&config};
+            PyConfig_Clear(&config);
+            return interpret;
+        }();
+        static auto plot_fn = [] -> pybind11::object {
+            pybind11::module_::import("sys").attr("path").attr("insert")(
+                0, (std::filesystem::path(__FILE__).parent_path().parent_path() / "utils").string());
+            return pybind11::module_::import("graph").attr("plot");
+        }();
+        return plot_fn;
+    }
+
+public:
     static int plot(const std::vector<Inequation>& inequations, const std::vector<Point>& points = {}, const Fraction& limit = 10,
                     const std::string& file_name = "graph.png") {
-        const int inequations_size = inequations.size(), points_size = points.size();
         const Fraction increment = limit / 100;
-        int actual_inequation_size = inequations_size;
-        std::string x;
-        std::vector<SimplePolynomial> simplified(inequations_size);
-        std::vector<Fraction> non_ys(inequations_size);
-        std::vector<std::pair<Variable, Fraction>> substituent(1, {Variable("x"), 0});
-        std::vector<std::vector<int>> combinations = detail::generate_combinations(inequations_size, 2);
-        std::vector<std::string> ys(inequations_size);
+        std::vector<double> x_vals;
+        std::vector<std::pair<std::vector<double>, std::string>> y_curves;
+        std::vector<std::pair<double, std::string>> vertical_lines;
+        std::vector<std::pair<std::string, std::string>> pt_list;
+        std::map<Variable, Fraction> substituent{{Variable("x"), Fraction(0)}};
 
-        for (int i = 0; i < inequations_size; i++) {
-            if (std::ranges::contains(std::array{inequations[i].lhs.terms, inequations[i].rhs.terms} | std::views::join, Variable("y"),
-                                      &Variable::basis)) {
-                simplified[i] = inequations[i].solve_for(Variable("y")).rhs;
-                non_ys[i] = inf;
+        for (const auto& inequation : inequations) {
+            if (std::ranges::contains(std::array{inequation.lhs.terms, inequation.rhs.terms} | std::views::join, Variable("y"), &Variable::basis)) {
+                const SimplePolynomial simplified = inequation.solve_for(Variable("y")).rhs;
+                std::vector<double> y_vals;
+
+                for (Fraction i = 0; i < limit; i += increment) {
+                    substituent.begin()->second = i;
+                    y_vals.push_back(static_cast<double>(static_cast<Fraction>(simplified.substitute(substituent))));
+                }
+                y_curves.emplace_back(std::move(y_vals), std::to_string(inequation));
             } else {
-                non_ys[i] = static_cast<Fraction>(inequations[i].solve_for(Variable("x")).rhs);
-                actual_inequation_size--;
+                vertical_lines.emplace_back(static_cast<double>(static_cast<Fraction>(inequation.solve_for(Variable("x")).rhs)),
+                                            std::to_string(inequation));
             }
         }
         for (Fraction i = 0; i < limit; i += increment) {
-            x.append(std::to_string(i)).push_back(',');
-            substituent[0].second = i;
-
-            for (int j = 0; j < inequations_size; j++) {
-                if (non_ys[j] == inf) {
-                    ys[j].append(std::to_string(simplified[j].substitute(substituent))).push_back(',');
-                }
-            }
+            x_vals.push_back(static_cast<double>(i));
         }
-        for (int i = 0; i < inequations_size; i++) {
-            ys[i].append(" '").append(std::to_string(inequations[i])).push_back('\'');
-        }
-        std::string command(interpreter_path);
-        command.append(" ")
-            .append(source_path)
-            .append(" ")
-            .append(file_name)
-            .append(" ")
-            .append(x)
-            .append(" ")
-            .append(std::to_string(actual_inequation_size))
-            .push_back(' ');
-
-        for (int i = 0; i < inequations_size; i++) {
-            if (non_ys[i] == inf) {
-                command.append(ys[i]).push_back(' ');
-            }
-        }
-        command.append(std::to_string(points_size)).push_back(' ');
-
         for (const auto& [px, py] : points) {
-            command.append(std::to_string(px)).append(",").append(std::to_string(py)).push_back(' ');
+            pt_list.emplace_back(std::to_string(px), std::to_string(py));
         }
-        command.append(std::to_string(inequations_size - actual_inequation_size)).push_back(' ');
-
-        for (int i = 0; i < inequations_size; i++) {
-            if (non_ys[i] != inf) {
-                command.append(std::to_string(non_ys[i])).append(" ").append(ys[i]).push_back(' ');
-            }
-        }
-        const int code = system(command.c_str());
+        const int code = get_plot_fn()(file_name, x_vals, y_curves, pt_list, vertical_lines).cast<int>();
 
         if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
             std::string latex("\\begin{center}\n\\includegraphics[width=\\textwidth]{");
