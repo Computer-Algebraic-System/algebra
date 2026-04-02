@@ -61,6 +61,10 @@ public:
 
     Interval differentiate(const Variable& wrt) const { return {lhs.differentiate(wrt), opr1, mid.differentiate(wrt), opr2, rhs.differentiate(wrt)}; }
 
+    Interval integral(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+        return {lhs.integrate(wrt, a, b), opr1, mid.integrate(wrt, a, b), opr2, rhs.integrate(wrt, a, b)};
+    }
+
     std::string to_latex() const {
         return Inequation(lhs, opr1, mid).to_latex().append(" ").append(detail::to_latex(opr2)).append(" ").append(rhs.to_latex());
     }

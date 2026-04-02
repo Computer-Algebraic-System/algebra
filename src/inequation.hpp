@@ -116,6 +116,10 @@ public:
 
     Inequation differentiate(const Variable& wrt) const { return Inequation(lhs.differentiate(wrt), opr, rhs.differentiate(wrt)); }
 
+    Inequation integral(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+        return Inequation(lhs.integrate(wrt, a, b), opr, rhs.integrate(wrt, a, b));
+    }
+
     std::string to_latex() const { return lhs.to_latex().append(" ").append(detail::to_latex(opr)).append(" ").append(rhs.to_latex()); }
 
     bool is_bool() const { return lhs.is_fraction() && rhs.is_fraction(); }
@@ -155,12 +159,6 @@ public:
     }
 
     Equation(const RationalPolynomial& lhs, const RationalPolynomial& rhs) : Inequation(lhs, RelationalOperator::EQ, rhs) {}
-
-    Equation swap() const {
-        Equation res = *this;
-        std::swap(res.lhs, res.rhs);
-        return res;
-    }
 };
 
 inline algebra::Inequation::operator Equation() const { return Equation(lhs, rhs); }

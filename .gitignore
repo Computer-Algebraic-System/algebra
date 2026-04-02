@@ -3,3 +3,4 @@ utils/.idea
 .clang-format
 .clang-tidy
 main
+algebra.hpp.gch

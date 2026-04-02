@@ -12,7 +12,7 @@ public:
 
     AlgebraicExpression(const Fraction& fraction) : AlgebraicExpression(T(fraction)) {}
 
-    AlgebraicExpression(const T& value) : terms({value}) {}
+    AlgebraicExpression(const T& value) : terms(1, value) {}
 
     AlgebraicExpression operator-() const {
         AlgebraicExpression res = *this;
@@ -119,6 +119,15 @@ public:
 
         for (const T& var : terms) {
             res += var.differentiate(wrt);
+        }
+        return res;
+    }
+
+    AlgebraicExpression integrate(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+        AlgebraicExpression res;
+
+        for (const T& value : terms) {
+            res += value.integrate(wrt, a, b);
         }
         return res;
     }

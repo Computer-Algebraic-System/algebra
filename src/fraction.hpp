@@ -164,18 +164,18 @@ namespace algebra {
 } // namespace algebra
 
 namespace std {
-    inline algebra::Fraction abs(algebra::Fraction fraction) {
-        fraction.numerator = abs(fraction.numerator);
+    constexpr algebra::Fraction abs(algebra::Fraction fraction) {
+        fraction.numerator = fraction.numerator < 0 ? -fraction.numerator : fraction.numerator;
         return fraction;
     }
 
-    inline algebra::Fraction gcd(const algebra::Fraction& lhs, const algebra::Fraction& rhs) {
+    constexpr algebra::Fraction gcd(const algebra::Fraction& lhs, const algebra::Fraction& rhs) {
         return algebra::Fraction(gcd(lhs.numerator, rhs.numerator), lcm(lhs.denominator, rhs.denominator));
     }
 
-    inline algebra::Fraction& max(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs < rhs ? rhs : lhs; }
+    constexpr algebra::Fraction& max(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs < rhs ? rhs : lhs; }
 
-    inline algebra::Fraction& min(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs <= rhs ? lhs : rhs; }
+    constexpr algebra::Fraction& min(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs <= rhs ? lhs : rhs; }
 
     inline string to_string(const algebra::Fraction& fraction) {
         string res;
@@ -216,5 +216,7 @@ inline std::string algebra::Fraction::to_latex() const {
     }
     return res;
 }
+
+constexpr algebra::Fraction operator*(const int lhs, const algebra::Fraction& rhs) { return rhs * lhs; }
 
 inline std::ostream& algebra::operator<<(std::ostream& out, const Fraction& fraction) { return out << std::to_string(fraction); }

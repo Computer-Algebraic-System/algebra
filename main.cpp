@@ -4,7 +4,7 @@ using namespace algebra;
 
 int main() {
     // GLOBAL_FORMATTING.toggle_file("output.txt");
-    // GLOBAL_FORMATTING.toggle_latex("latex.tex");
+    GLOBAL_FORMATTING.toggle_latex("latex.tex");
     detail::FormatSettings& out = GLOBAL_FORMATTING;
     Variable x("x"), y("y"), z("z");
     out << Fraction(2, 3) << std::endl;
@@ -35,5 +35,14 @@ int main() {
     out << (6 * x * x * y + 9 * x * y * y) / (3 * x * y) << std::endl;
     out << (x * y * z) / (x * y * z) << std::endl;
     out << (0 * x + 0 * y) / (5 * z) << std::endl;
+    const SimplePolynomial f = (x ^ 2) + z;
+    out << f.integrate(x, 2, 4);
+    const Definition def({x, y},
+                         {
+                             {(x ^ 2.7) + 5.5 * y / (y ^ 3.6), "x >= y"},
+                             {(y ^ 2.7) + 5.5 * x / (x ^ 3.6), "x < y"},
+                             {Fraction(0), "otherwise"},
+                         });
+    out << def;
     return 0;
 }

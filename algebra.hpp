@@ -40,6 +40,9 @@ namespace algebra {
     class Graph;
     std::ostream& operator<<(std::ostream&, const Point&);
 
+    class Definition;
+    std::ostream& operator<<(std::ostream&, const Definition&);
+
     namespace detail {
         struct FormatSettings;
 
@@ -79,6 +82,7 @@ namespace algebra {
             RATIONAL_POLYNOMIAL,
             SIMPLE_EXPRESSION,
             RATIONAL_EXPRESSION,
+            DEFINITION,
         };
     } // namespace detail
 } // namespace algebra
@@ -93,3 +97,4 @@ namespace algebra {
 #include "src/inequation.hpp"
 #include "src/interval.hpp"
 #include "src/graph.hpp"
+#include "src/defination.hpp"

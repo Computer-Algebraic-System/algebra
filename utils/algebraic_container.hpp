@@ -138,6 +138,36 @@ public:
         return AlgebraicContainer(denominator * numerator.differentiate(wrt) - numerator * denominator.differentiate(wrt), denominator * denominator);
     }
 
+    AlgebraicContainer integrate(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+        assert(wrt.variables.size() == 1);
+        static constexpr auto tol = Fraction(10) ^ -9;
+        int n = 2;
+        AlgebraicContainer current, prev;
+        std::map<Variable, Fraction> substituent{{wrt, a}}, sub;
+
+        for (const Variable& variable : std::array{numerator, denominator} | std::views::join) {
+            for (const auto& [name, exponent] : variable.variables) {
+                sub.emplace(name, 1);
+            }
+        }
+        do {
+            const Fraction h = (b - a) / n;
+            prev = current;
+            substituent.begin()->second = a;
+            current = substitute(substituent);
+
+            for (int i = 1; i < n; i++) {
+                substituent.begin()->second = a + i * h;
+                current += (i % 2 == 0 ? 2 : 4) * substitute(substituent);
+            }
+            substituent.begin()->second = b;
+            current += substitute(substituent);
+            current *= h / 3;
+            n <<= 1;
+        } while (std::abs(static_cast<Fraction>(current.substitute(sub)) - static_cast<Fraction>(prev.substitute(sub))) > tol);
+        return current;
+    }
+
     bool is_numerator() const { return denominator.is_fraction() and static_cast<Fraction>(denominator) == 1; }
 
     bool is_value() const { return is_numerator() && numerator.is_value(); }
@@ -151,7 +181,7 @@ public:
         std::string res;
 
         if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
-            res.append("\\frac{");
+            res.append("\\dfrac{");
         }
         res.append(numerator.to_latex());
 

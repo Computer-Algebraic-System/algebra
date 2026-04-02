@@ -1,4 +1,5 @@
 #pragma once
+#include <stacktrace>
 
 class algebra::Variable {
     static constexpr auto serial_class = detail::SerialClass::VARIABLE;
@@ -134,7 +135,7 @@ public:
     }
 
     Variable differentiate(const Variable& wrt) const {
-        assert(!wrt.variables.empty());
+        assert(wrt.variables.size() == 1);
         Variable res = *this;
         const auto itr = std::ranges::find(res.variables, wrt.variables.front().name, &Var::name);
 
@@ -147,6 +148,34 @@ public:
             return res;
         }
         return {};
+    }
+
+    Variable integrate(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+        assert(wrt.variables.size() == 1);
+        static constexpr auto tol = Fraction(10) ^ -9;
+        int n = 2;
+        Variable current, prev;
+        std::map<Variable, Fraction> substituent{{wrt, a}}, sub;
+
+        for (const auto& [name, exponent] : variables) {
+            sub.emplace(name, 1);
+        }
+        do {
+            const Fraction h = (b - a) / n;
+            prev = current;
+            substituent.begin()->second = a;
+            current = substitute(substituent);
+
+            for (int i = 1; i < n; i++) {
+                substituent.begin()->second = a + i * h;
+                current.coefficient += (i % 2 == 0 ? 2 : 4) * substitute(substituent).coefficient;
+            }
+            substituent.begin()->second = b;
+            current.coefficient += substitute(substituent).coefficient;
+            current *= h / 3;
+            n <<= 1;
+        } while (std::abs(static_cast<Fraction>(current.substitute(sub)) - static_cast<Fraction>(prev.substitute(sub))) > tol);
+        return current;
     }
 
     bool is_fraction() const { return variables.empty(); }
@@ -164,7 +193,7 @@ public:
             coefficient.denominator != 1;
 
         if (fractional) {
-            res.append("\\frac{");
+            res.append("\\dfrac{");
         }
         if (std::abs(coefficient.numerator) == 1) {
             if (coefficient.numerator == -1) {
