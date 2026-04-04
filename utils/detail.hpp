@@ -2,6 +2,17 @@
 
 namespace algebra {
     namespace detail {
+        class LaTeX {
+            const std::string& latex;
+
+        public:
+            LaTeX(const std::string& latex) : latex(latex) {}
+
+            const std::string& to_latex() const { return latex; }
+        };
+
+        inline std::ostream& operator<<(std::ostream& out, const LaTeX& latex) { return out << latex.to_latex(); }
+
         struct FormatSettings {
             enum class Output { CONSOLE, FILE, LATEX } output = Output::CONSOLE;
             bool was_math = false, verbose = true;
@@ -24,6 +35,8 @@ namespace algebra {
 
             template <typename T>
             friend FormatSettings& operator<<(FormatSettings& fmt, const T& object) {
+                fmt.was_math = false;
+
                 if (fmt.verbose) {
                     switch (fmt.output) {
                     case Output::CONSOLE:
@@ -36,7 +49,6 @@ namespace algebra {
                             fmt.was_math = true;
                         } else {
                             fmt.file << object;
-                            fmt.was_math = false;
                         }
                         break;
 

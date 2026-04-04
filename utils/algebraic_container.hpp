@@ -140,7 +140,7 @@ public:
 
     AlgebraicContainer integrate(const Variable& wrt, const Fraction& a, const Fraction& b) const {
         assert(wrt.variables.size() == 1);
-        static constexpr auto tol = Fraction(10) ^ -9;
+        static auto tol = Fraction(10) ^ -9;
         int n = 2;
         AlgebraicContainer current, prev;
         std::map<Variable, Fraction> substituent{{wrt, a}}, sub;

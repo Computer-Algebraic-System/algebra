@@ -1,6 +1,7 @@
 #pragma once
 #include <algorithm>
 #include <assert.h>
+#include <boost/multiprecision/cpp_int.hpp>
 #include <cmath>
 #include <complex>
 #include <filesystem>
@@ -16,6 +17,9 @@
 
 namespace algebra {
     enum class RelationalOperator { LT, LE, GT, GE, EQ };
+
+    class BigInt;
+    std::ostream& operator<<(std::ostream&, const BigInt&);
 
     class Fraction;
     std::ostream& operator<<(std::ostream&, const Fraction&);
@@ -44,6 +48,9 @@ namespace algebra {
     std::ostream& operator<<(std::ostream&, const Definition&);
 
     namespace detail {
+        class LaTeX;
+        std::ostream& operator<<(std::ostream&, const LaTeX&);
+
         struct FormatSettings;
 
         template <typename T>
@@ -69,9 +76,11 @@ namespace algebra {
     using SimpleExpression = detail::AlgebraicExpression<Function>;
     using RationalExpression = detail::AlgebraicContainer<Function>;
 
+    class Expression;
+
     namespace detail {
         enum class SerialClass : uint8_t {
-            FRACTION,
+            RATIONAL,
             COMPLEX,
             VARIABLE,
             FUNCTION,
@@ -88,6 +97,7 @@ namespace algebra {
 } // namespace algebra
 
 #include "utils/detail.hpp"
+#include "src/big_int.hpp"
 #include "src/fraction.hpp"
 #include "src/complex.hpp"
 #include "src/variable.hpp"
@@ -98,3 +108,4 @@ namespace algebra {
 #include "src/interval.hpp"
 #include "src/graph.hpp"
 #include "src/defination.hpp"
+// #include "src/expression.hpp"

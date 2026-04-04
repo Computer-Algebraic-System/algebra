@@ -1,5 +1,4 @@
 #pragma once
-#include <stacktrace>
 
 class algebra::Variable {
     static constexpr auto serial_class = detail::SerialClass::VARIABLE;
@@ -108,15 +107,21 @@ public:
 
     bool operator==(const Variable&) const = default;
 
-    Variable substitute(const std::map<Variable, Fraction>& values) const {
+    Variable basis() const {
+        Variable res = *this;
+        res.coefficient = 1;
+        return res;
+    }
+
+    Variable substitute(const std::map<Variable, Fraction>& values, const bool origin = true) const {
         Variable res = *this;
 
         for (const auto& [variable, value] : values) {
             assert(!variable.variables.empty());
             const std::string& name = variable.variables.front().name;
-            const auto itr = std::ranges::lower_bound(res.variables, name, {}, &Var::name);
+            const auto itr = std::ranges::find(res.variables, name, &Var::name);
 
-            if (itr != res.variables.end() && itr->name == name) {
+            if (itr != res.variables.end()) {
                 res.coefficient *= value ^ itr->exponent;
                 res.variables.erase(itr);
             }
@@ -125,16 +130,29 @@ public:
                 break;
             }
         }
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
+                std::string str = "\\left.";
+                str.append(to_latex()).append("\\right|_{");
+
+                for (const auto& [variable, fraction] : values) {
+                    str.append(variable.to_latex()).append("=").append(fraction.to_latex()).push_back(',');
+                }
+                str.pop_back();
+                GLOBAL_FORMATTING << detail::LaTeX(str.append("}=").append(res.to_latex()));
+            } else {
+                GLOBAL_FORMATTING << *this << "|(" << values.begin()->first << '=' << values.begin()->second;
+
+                for (const auto& [variable, fraction] : values | std::views::drop(1)) {
+                    GLOBAL_FORMATTING << ", " << variable << '=' << fraction;
+                }
+                GLOBAL_FORMATTING << ") = " << res << std::endl;
+            }
+        }
         return res;
     }
 
-    Variable basis() const {
-        Variable res = *this;
-        res.coefficient = 1;
-        return res;
-    }
-
-    Variable differentiate(const Variable& wrt) const {
+    Variable differentiate(const Variable& wrt, const bool origin = true) const {
         assert(wrt.variables.size() == 1);
         Variable res = *this;
         const auto itr = std::ranges::find(res.variables, wrt.variables.front().name, &Var::name);
@@ -145,16 +163,30 @@ public:
             if ((itr->exponent -= 1) == 0) {
                 res.variables.erase(itr);
             }
-            return res;
+        } else {
+            res = {};
         }
-        return {};
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
+                GLOBAL_FORMATTING << detail::LaTeX(std::string("\\dfrac{")
+                                                       .append(variables.size() > 1 ? "d}{d" : "\\partial}{\\partial ")
+                                                       .append(wrt.to_latex())
+                                                       .append("}")
+                                                       .append(to_latex())
+                                                       .append("=")
+                                                       .append(res.to_latex()));
+            } else {
+                GLOBAL_FORMATTING << "d/dx(" << *this << ") = " << res << std::endl;
+            }
+        }
+        return res;
     }
 
-    Variable integrate(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+    Variable integrate(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
         assert(wrt.variables.size() == 1);
-        static constexpr auto tol = Fraction(10) ^ -9;
+        static auto tol = Fraction(10) ^ -9;
         int n = 2;
-        Variable current, prev;
+        Variable res, prev;
         std::map<Variable, Fraction> substituent{{wrt, a}}, sub;
 
         for (const auto& [name, exponent] : variables) {
@@ -162,20 +194,36 @@ public:
         }
         do {
             const Fraction h = (b - a) / n;
-            prev = current;
+            prev = res;
             substituent.begin()->second = a;
-            current = substitute(substituent);
+            res = substitute(substituent, false);
 
             for (int i = 1; i < n; i++) {
                 substituent.begin()->second = a + i * h;
-                current.coefficient += (i % 2 == 0 ? 2 : 4) * substitute(substituent).coefficient;
+                res.coefficient += (i % 2 == 0 ? 2 : 4) * substitute(substituent, false).coefficient;
             }
             substituent.begin()->second = b;
-            current.coefficient += substitute(substituent).coefficient;
-            current *= h / 3;
+            res.coefficient += substitute(substituent, false).coefficient;
+            res *= h / 3;
             n <<= 1;
-        } while (std::abs(static_cast<Fraction>(current.substitute(sub)) - static_cast<Fraction>(prev.substitute(sub))) > tol);
-        return current;
+        } while (std::abs(static_cast<Fraction>(res.substitute(sub, false)) - static_cast<Fraction>(prev.substitute(sub, false))) > tol);
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
+                GLOBAL_FORMATTING << detail::LaTeX(std::string("\\int_{")
+                                                       .append(a.to_latex())
+                                                       .append("}^{")
+                                                       .append(b.to_latex())
+                                                       .append("}")
+                                                       .append(to_latex())
+                                                       .append("d")
+                                                       .append(wrt.to_latex())
+                                                       .append("=")
+                                                       .append(res.to_latex()));
+            } else {
+                GLOBAL_FORMATTING << "Integration of " << *this << 'd' << wrt << " from " << a << " to " << b << " = " << res << std::endl;
+            }
+        }
+        return res;
     }
 
     bool is_fraction() const { return variables.empty(); }

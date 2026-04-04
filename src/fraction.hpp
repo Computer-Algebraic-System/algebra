@@ -1,11 +1,13 @@
 #pragma once
 
 class algebra::Fraction {
-    static constexpr auto serial_class = detail::SerialClass::FRACTION;
+    static constexpr auto serial_class = detail::SerialClass::RATIONAL;
 
-    constexpr void simplify() {
-        assert(denominator != 0);
-
+    void simplify() {
+        if (denominator == 0) {
+            numerator = numerator < 0 ? -1 : 1;
+            return;
+        }
         if (denominator < 0) {
             numerator = -numerator;
             denominator = -denominator;
@@ -13,23 +15,23 @@ class algebra::Fraction {
         if (numerator == 0) {
             denominator = 1;
         } else {
-            const int64_t gcd = std::gcd(numerator, denominator);
+            const BigInt gcd = std::gcd(numerator, denominator);
             numerator /= gcd;
             denominator /= gcd;
         }
     }
 
 public:
-    int64_t numerator, denominator;
+    BigInt numerator, denominator;
 
-    constexpr Fraction(const int numerator = 0, const int denominator = 1) : numerator(numerator), denominator(denominator) { simplify(); }
+    Fraction(const int numerator = 0, const int denominator = 1) : Fraction(BigInt(numerator), BigInt(denominator)) {}
 
-    constexpr Fraction(const int64_t numerator, const int64_t denominator = 1) : numerator(numerator), denominator(denominator) { simplify(); }
+    Fraction(const BigInt& numerator, const BigInt& denominator) : numerator(numerator), denominator(denominator) { simplify(); }
 
     template <typename T>
         requires std::floating_point<T>
-    constexpr Fraction(T value) : numerator(0), denominator(1) {
-        for (int i = 0; i < 9 && static_cast<int64_t>(value) != value; i++) {
+    Fraction(T value) : numerator(0), denominator(1) {
+        for (int i = 0; i < 20 && static_cast<__int128_t>(value) != value; i++) {
             denominator *= 10;
             value *= 10;
         }
@@ -37,9 +39,9 @@ public:
         simplify();
     }
 
-    constexpr Fraction operator-() const { return {-numerator, denominator}; }
+    Fraction operator-() const { return Fraction(-numerator, denominator); }
 
-    constexpr Fraction& operator+=(const Fraction& value) {
+    Fraction& operator+=(const Fraction& value) {
         if (value.is_infinity()) {
             *this = value;
         } else if (!is_infinity()) {
@@ -50,13 +52,13 @@ public:
         return *this;
     }
 
-    constexpr Fraction operator+(const Fraction& value) const { return Fraction(*this) += value; }
+    Fraction operator+(const Fraction& value) const { return Fraction(*this) += value; }
 
-    constexpr Fraction& operator-=(const Fraction& value) { return *this += -value; }
+    Fraction& operator-=(const Fraction& value) { return *this += -value; }
 
-    constexpr Fraction operator-(const Fraction& value) const { return *this + -value; }
+    Fraction operator-(const Fraction& value) const { return *this + -value; }
 
-    constexpr Fraction& operator*=(const Fraction& value) {
+    Fraction& operator*=(const Fraction& value) {
         if (value.is_infinity()) {
             *this = value;
         } else if (!is_infinity()) {
@@ -67,9 +69,9 @@ public:
         return *this;
     }
 
-    constexpr Fraction operator*(const Fraction& value) const { return Fraction(*this) *= value; }
+    Fraction operator*(const Fraction& value) const { return Fraction(*this) *= value; }
 
-    constexpr Fraction& operator/=(const Fraction& value) {
+    Fraction& operator/=(const Fraction& value) {
         if (value.is_infinity()) {
             *this = value;
         } else if (!is_infinity()) {
@@ -80,38 +82,61 @@ public:
         return *this;
     }
 
-    constexpr Fraction operator/(const Fraction& value) const { return Fraction(*this) /= value; }
+    Fraction operator/(const Fraction& value) const { return Fraction(*this) /= value; }
 
-    constexpr Fraction& operator^=(const Fraction& value) {
+    Fraction& operator^=(Fraction value) {
         if (value.is_infinity()) {
             *this = value;
-        } else if (!is_infinity()) {
-            const double exponent = static_cast<double>(value);
-            *this = Fraction(std::pow(numerator, exponent)) / Fraction(std::pow(denominator, exponent));
+            return *this;
         }
+        if (is_infinity()) {
+            return *this;
+        }
+        if (value.denominator == 1) {
+            BigInt exp = value.numerator;
+
+            if (exp < 0) {
+                std::swap(numerator, denominator);
+                exp = -exp;
+            }
+            numerator ^= exp;
+            denominator ^= exp;
+            simplify();
+            return *this;
+        }
+        assert(numerator >= 0 || value.denominator % 2 != 0);
+        BigInt root_num = numerator.nth_root(value.denominator);
+        BigInt root_den = denominator.nth_root(value.denominator);
+        assert(root_num != -1 && root_den != -1 && (root_num ^ value.denominator) == numerator && (root_den ^ value.denominator) == denominator);
+
+        if (value.numerator < 0) {
+            std::swap(root_num, root_den);
+            value.numerator = -value.numerator;
+        }
+        numerator = root_num ^ value.numerator;
+        denominator = root_den ^ value.numerator;
+        simplify();
         return *this;
     }
 
-    constexpr Fraction operator^(const Fraction& value) const { return Fraction(*this) ^= value; }
+    Fraction operator^(const Fraction& value) const { return Fraction(*this) ^= value; }
 
-    constexpr std::strong_ordering operator<=>(const Fraction& value) const {
-        return static_cast<__int128_t>(numerator) * value.denominator <=> static_cast<__int128_t>(value.numerator) * denominator;
-    }
+    std::strong_ordering operator<=>(const Fraction& value) const { return numerator * value.denominator <=> value.numerator * denominator; }
 
     template <typename T>
         requires std::integral<T> || std::floating_point<T>
-    constexpr std::partial_ordering operator<=>(const T& value) const {
+    std::partial_ordering operator<=>(const T& value) const {
         return static_cast<double>(*this) <=> value;
     }
 
-    constexpr bool operator==(const Fraction& value) const = default;
+    bool operator==(const Fraction& value) const = default;
 
-    constexpr bool operator==(const double value) const { return static_cast<double>(*this) == value; }
+    bool operator==(const long double value) const { return static_cast<double>(*this) == value; }
 
     template <typename T>
         requires std::integral<T> || std::floating_point<T>
-    constexpr explicit operator T() const {
-        return static_cast<T>(numerator) / denominator;
+    explicit operator T() const {
+        return static_cast<T>(numerator) / static_cast<T>(denominator);
     }
 
     void serialize(std::ofstream& out) const {
@@ -131,7 +156,7 @@ public:
         return res;
     }
 
-    constexpr bool is_infinity() const;
+    bool is_infinity() const;
 
     Fraction reciprocate() const { return Fraction(denominator, numerator); }
 
@@ -139,7 +164,7 @@ public:
 };
 
 namespace algebra {
-    inline static constexpr Fraction inf = INT64_MAX;
+    inline static auto inf = Fraction(1, 0);
 
     namespace detail {
         inline bool evaluate_relational_operator(const Fraction& lhs, const RelationalOperator opr, const Fraction& rhs) {
@@ -164,18 +189,18 @@ namespace algebra {
 } // namespace algebra
 
 namespace std {
-    constexpr algebra::Fraction abs(algebra::Fraction fraction) {
+    inline algebra::Fraction abs(algebra::Fraction fraction) {
         fraction.numerator = fraction.numerator < 0 ? -fraction.numerator : fraction.numerator;
         return fraction;
     }
 
-    constexpr algebra::Fraction gcd(const algebra::Fraction& lhs, const algebra::Fraction& rhs) {
+    inline algebra::Fraction gcd(const algebra::Fraction& lhs, const algebra::Fraction& rhs) {
         return algebra::Fraction(gcd(lhs.numerator, rhs.numerator), lcm(lhs.denominator, rhs.denominator));
     }
 
-    constexpr algebra::Fraction& max(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs < rhs ? rhs : lhs; }
+    inline algebra::Fraction& max(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs < rhs ? rhs : lhs; }
 
-    constexpr algebra::Fraction& min(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs <= rhs ? lhs : rhs; }
+    inline algebra::Fraction& min(algebra::Fraction& lhs, algebra::Fraction& rhs) { return lhs <= rhs ? lhs : rhs; }
 
     inline string to_string(const algebra::Fraction& fraction) {
         string res;
@@ -195,7 +220,7 @@ namespace std {
     }
 } // namespace std
 
-constexpr bool algebra::Fraction::is_infinity() const { return std::abs(*this) == inf; }
+inline bool algebra::Fraction::is_infinity() const { return std::abs(*this) == inf; }
 
 inline std::string algebra::Fraction::to_latex() const {
     std::string res;
@@ -217,6 +242,6 @@ inline std::string algebra::Fraction::to_latex() const {
     return res;
 }
 
-constexpr algebra::Fraction operator*(const int lhs, const algebra::Fraction& rhs) { return rhs * lhs; }
+inline algebra::Fraction operator*(const int lhs, const algebra::Fraction& rhs) { return rhs * lhs; }
 
 inline std::ostream& algebra::operator<<(std::ostream& out, const Fraction& fraction) { return out << std::to_string(fraction); }
