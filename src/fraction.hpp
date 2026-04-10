@@ -1,7 +1,7 @@
 #pragma once
 
 class algebra::Fraction {
-    static constexpr auto serial_class = detail::SerialClass::RATIONAL;
+    static constexpr auto serial_class = detail::SerialClass::FRACTION;
 
     void simplify() {
         if (denominator == 0) {
@@ -101,20 +101,18 @@ public:
             }
             numerator ^= exp;
             denominator ^= exp;
-            simplify();
-            return *this;
-        }
-        assert(numerator >= 0 || value.denominator % 2 != 0);
-        BigInt root_num = numerator.nth_root(value.denominator);
-        BigInt root_den = denominator.nth_root(value.denominator);
-        assert(root_num != -1 && root_den != -1 && (root_num ^ value.denominator) == numerator && (root_den ^ value.denominator) == denominator);
+        } else {
+            assert(numerator >= 0 || value.denominator % 2 != 0);
+            BigInt root_num = numerator.nth_root(value.denominator), root_den = denominator.nth_root(value.denominator);
+            assert(root_num != -1 && root_den != -1 && (root_num ^ value.denominator) == numerator && (root_den ^ value.denominator) == denominator);
 
-        if (value.numerator < 0) {
-            std::swap(root_num, root_den);
-            value.numerator = -value.numerator;
+            if (value.numerator < 0) {
+                std::swap(root_num, root_den);
+                value.numerator = -value.numerator;
+            }
+            numerator = root_num ^ value.numerator;
+            denominator = root_den ^ value.numerator;
         }
-        numerator = root_num ^ value.numerator;
-        denominator = root_den ^ value.numerator;
         simplify();
         return *this;
     }
@@ -141,8 +139,8 @@ public:
 
     void serialize(std::ofstream& out) const {
         out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
-        out.write(reinterpret_cast<const char*>(&numerator), sizeof(numerator));
-        out.write(reinterpret_cast<const char*>(&denominator), sizeof(denominator));
+        numerator.serialize(out);
+        denominator.serialize(out);
     }
 
     static Fraction deserialize(std::ifstream& in) {
@@ -151,8 +149,8 @@ public:
         assert(type == serial_class);
 
         Fraction res;
-        in.read(reinterpret_cast<char*>(&res.numerator), sizeof(res.numerator));
-        in.read(reinterpret_cast<char*>(&res.denominator), sizeof(res.denominator));
+        res.numerator = BigInt::deserialize(in);
+        res.denominator = BigInt::deserialize(in);
         return res;
     }
 

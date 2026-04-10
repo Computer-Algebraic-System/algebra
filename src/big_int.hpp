@@ -1,6 +1,8 @@
 #pragma once
 
 class algebra::BigInt {
+    static constexpr auto serial_class = detail::SerialClass::BIG_INT;
+
 public:
     boost::multiprecision::cpp_int value;
 
@@ -141,6 +143,41 @@ public:
             }
         }
         return -1;
+    }
+
+    void serialize(std::ofstream& out) const {
+        const bool neg = value < 0;
+        const boost::multiprecision::cpp_int abs_val = neg ? -value : value;
+        std::vector<uint8_t> data;
+        export_bits(abs_val, std::back_inserter(data), 8);
+        const size_t size = data.size();
+        out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
+        out.write(reinterpret_cast<const char*>(&neg), sizeof(neg));
+        out.write(reinterpret_cast<const char*>(&size), sizeof(size));
+
+        if (size > 0) {
+            out.write(reinterpret_cast<const char*>(data.data()), size);
+        }
+    }
+
+    static BigInt deserialize(std::ifstream& in) {
+        detail::SerialClass type;
+        in.read(reinterpret_cast<char*>(&type), sizeof(type));
+        assert(type == serial_class);
+
+        bool neg;
+        size_t size;
+        in.read(reinterpret_cast<char*>(&neg), sizeof(neg));
+        in.read(reinterpret_cast<char*>(&size), sizeof(size));
+        BigInt res;
+        std::vector<uint8_t> data(size);
+
+        if (size > 0) {
+            in.read(reinterpret_cast<char*>(data.data()), size);
+        }
+        import_bits(res.value, data.begin(), data.end());
+        res.value = neg ? -res.value : res.value;
+        return res;
     }
 };
 

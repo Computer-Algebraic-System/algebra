@@ -83,10 +83,14 @@ public:
         return res;
     }
 
-    Inequation substitute(const std::map<Variable, Fraction>& values) const {
+    Inequation substitute(const std::map<Variable, Fraction>& values, const bool origin = true) const {
         Inequation res = *this;
-        res.lhs = res.lhs.substitute(values);
-        res.rhs = res.rhs.substitute(values);
+        res.lhs = res.lhs.substitute(values, false);
+        res.rhs = res.rhs.substitute(values, false);
+
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_substitute(*this, values, res);
+        }
         return res;
     }
 
@@ -114,10 +118,22 @@ public:
         return res;
     }
 
-    Inequation differentiate(const Variable& wrt) const { return Inequation(lhs.differentiate(wrt), opr, rhs.differentiate(wrt)); }
+    Inequation differentiate(const Variable& wrt, const bool origin = true) const {
+        Inequation res(lhs.differentiate(wrt, false), opr, rhs.differentiate(wrt, false));
 
-    Inequation integral(const Variable& wrt, const Fraction& a, const Fraction& b) const {
-        return Inequation(lhs.integrate(wrt, a, b), opr, rhs.integrate(wrt, a, b));
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_differentiate(*this, wrt, res);
+        }
+        return res;
+    }
+
+    Inequation integral(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
+        Inequation res(lhs.integrate(wrt, a, b, false), opr, rhs.integrate(wrt, a, b, false));
+
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_integrate(*this, a, b, wrt, res);
+        }
+        return res;
     }
 
     std::string to_latex() const { return lhs.to_latex().append(" ").append(detail::to_latex(opr)).append(" ").append(rhs.to_latex()); }

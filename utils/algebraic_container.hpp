@@ -130,15 +130,26 @@ public:
         return AlgebraicContainer(numerator * value.denominator, denominator * value.numerator);
     }
 
-    AlgebraicContainer substitute(const std::map<T, Fraction>& values) const {
-        return AlgebraicContainer(numerator.substitute(values), denominator.substitute(values));
+    AlgebraicContainer substitute(const std::map<T, Fraction>& values, const bool origin = true) const {
+        AlgebraicContainer res(numerator.substitute(values, false), denominator.substitute(values, false));
+
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_substitute(*this, values, res);
+        }
+        return res;
     }
 
-    AlgebraicContainer differentiate(const T& wrt) const {
-        return AlgebraicContainer(denominator * numerator.differentiate(wrt) - numerator * denominator.differentiate(wrt), denominator * denominator);
+    AlgebraicContainer differentiate(const T& wrt, const bool origin = true) const {
+        AlgebraicContainer res(denominator * numerator.differentiate(wrt, false) - numerator * denominator.differentiate(wrt, false),
+                               denominator * denominator);
+
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_differentiate(*this, wrt, res);
+        }
+        return res;
     }
 
-    AlgebraicContainer integrate(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+    AlgebraicContainer integrate(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
         assert(wrt.variables.size() == 1);
         static auto tol = Fraction(10) ^ -9;
         int n = 2;
@@ -154,17 +165,20 @@ public:
             const Fraction h = (b - a) / n;
             prev = current;
             substituent.begin()->second = a;
-            current = substitute(substituent);
+            current = substitute(substituent, false);
 
             for (int i = 1; i < n; i++) {
                 substituent.begin()->second = a + i * h;
-                current += (i % 2 == 0 ? 2 : 4) * substitute(substituent);
+                current += (i % 2 == 0 ? 2 : 4) * substitute(substituent, false);
             }
             substituent.begin()->second = b;
-            current += substitute(substituent);
+            current += substitute(substituent, false);
             current *= h / 3;
             n <<= 1;
-        } while (std::abs(static_cast<Fraction>(current.substitute(sub)) - static_cast<Fraction>(prev.substitute(sub))) > tol);
+        } while (std::abs(static_cast<Fraction>(current.substitute(sub, false)) - static_cast<Fraction>(prev.substitute(sub, false))) > tol);
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_integrate(*this, a, b, wrt, current);
+        }
         return current;
     }
 
@@ -261,7 +275,6 @@ template <typename T>
 algebra::detail::AlgebraicContainer<T> operator/(const T& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return algebra::detail::AlgebraicContainer<T>(lhs) / rhs;
 }
-
 
 template <typename T>
 algebra::detail::AlgebraicContainer<T> operator/(const algebra::detail::AlgebraicExpression<T>& lhs,

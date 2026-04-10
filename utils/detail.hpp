@@ -172,6 +172,57 @@ namespace algebra {
     } // namespace detail
 
     inline detail::FormatSettings GLOBAL_FORMATTING;
+
+    namespace detail {
+        template <typename T, typename U>
+        void print_substitute(const T& initial, const std::map<U, Fraction>& values, const T& final) {
+            if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
+                std::string str = "\\left.";
+                str.append(initial.to_latex()).append("\\right|_{");
+
+                for (const auto& [variable, fraction] : values) {
+                    str.append(variable.to_latex()).append("=").append(fraction.to_latex()).push_back(',');
+                }
+                str.pop_back();
+                GLOBAL_FORMATTING << LaTeX(str.append("}=").append(final.to_latex()));
+            } else {
+                GLOBAL_FORMATTING << initial << "|(" << values.begin()->first << '=' << values.begin()->second;
+
+                for (const auto& [variable, fraction] : values | std::views::drop(1)) {
+                    GLOBAL_FORMATTING << ", " << variable << '=' << fraction;
+                }
+                GLOBAL_FORMATTING << ") = " << final << std::endl;
+            }
+        }
+
+        template <typename T, typename U>
+        void print_differentiate(const T& initial, const U& wrt, const T& final) {
+            if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
+                GLOBAL_FORMATTING << LaTeX(
+                    std::string("\\dfrac{d}{d").append(wrt.to_latex()).append("}").append(initial.to_latex()).append("=").append(final.to_latex()));
+            } else {
+                GLOBAL_FORMATTING << "d/dx(" << initial << ") = " << final << std::endl;
+            }
+        }
+
+        template <typename T, typename U, typename V>
+        void print_integrate(const T& initial, const U& a, const U& b, const V& wrt, const T& final) {
+            if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
+                GLOBAL_FORMATTING << LaTeX(std::string("\\int_{")
+                                               .append(a.to_latex())
+                                               .append("}^{")
+                                               .append(b.to_latex())
+                                               .append("}")
+                                               .append(initial.to_latex())
+                                               .append("d")
+                                               .append(wrt.to_latex())
+                                               .append("=")
+                                               .append(final.to_latex()));
+            } else {
+                GLOBAL_FORMATTING << "Integration of " << initial << 'd' << wrt << " from " << a << " to " << b << " = " << final << std::endl;
+            }
+        }
+    } // namespace detail
 } // namespace algebra
 
 namespace std {

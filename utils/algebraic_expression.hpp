@@ -105,29 +105,38 @@ public:
 
     std::map<T, Fraction> roots() const;
 
-    AlgebraicExpression substitute(const std::map<T, Fraction>& values) const {
+    AlgebraicExpression substitute(const std::map<T, Fraction>& values, const bool origin = true) const {
         AlgebraicExpression res;
 
         for (const T& value : terms) {
-            res += value.substitute(values);
+            res += value.substitute(values, false);
+        }
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_substitute(*this, values, res);
         }
         return res;
     }
 
-    AlgebraicExpression differentiate(const T& wrt) const {
+    AlgebraicExpression differentiate(const T& wrt, const bool origin = true) const {
         AlgebraicExpression res;
 
         for (const T& var : terms) {
-            res += var.differentiate(wrt);
+            res += var.differentiate(wrt, false);
+        }
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_differentiate(*this, wrt, res);
         }
         return res;
     }
 
-    AlgebraicExpression integrate(const Variable& wrt, const Fraction& a, const Fraction& b) const {
+    AlgebraicExpression integrate(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
         AlgebraicExpression res;
 
         for (const T& value : terms) {
-            res += value.integrate(wrt, a, b);
+            res += value.integrate(wrt, a, b, false);
+        }
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_integrate(*this, a, b, wrt, res);
         }
         return res;
     }

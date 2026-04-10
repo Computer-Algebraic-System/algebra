@@ -59,10 +59,22 @@ public:
 
     Interval operator/(const Variable& value) const { return Interval(lhs / value, opr1, mid / value, opr2, rhs / value); }
 
-    Interval differentiate(const Variable& wrt) const { return {lhs.differentiate(wrt), opr1, mid.differentiate(wrt), opr2, rhs.differentiate(wrt)}; }
+    Interval differentiate(const Variable& wrt, const bool origin = true) const {
+        Interval res(lhs.differentiate(wrt, false), opr1, mid.differentiate(wrt, false), opr2, rhs.differentiate(wrt, false));
 
-    Interval integral(const Variable& wrt, const Fraction& a, const Fraction& b) const {
-        return {lhs.integrate(wrt, a, b), opr1, mid.integrate(wrt, a, b), opr2, rhs.integrate(wrt, a, b)};
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_differentiate(*this, wrt, res);
+        }
+        return res;
+    }
+
+    Interval integral(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
+        Interval res(lhs.integrate(wrt, a, b), opr1, mid.integrate(wrt, a, b), opr2, rhs.integrate(wrt, a, b));
+
+        if (origin && GLOBAL_FORMATTING.verbose) {
+            detail::print_integrate(*this, a, b, wrt, res);
+        }
+        return res;
     }
 
     std::string to_latex() const {

@@ -131,23 +131,7 @@ public:
             }
         }
         if (origin && GLOBAL_FORMATTING.verbose) {
-            if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
-                std::string str = "\\left.";
-                str.append(to_latex()).append("\\right|_{");
-
-                for (const auto& [variable, fraction] : values) {
-                    str.append(variable.to_latex()).append("=").append(fraction.to_latex()).push_back(',');
-                }
-                str.pop_back();
-                GLOBAL_FORMATTING << detail::LaTeX(str.append("}=").append(res.to_latex()));
-            } else {
-                GLOBAL_FORMATTING << *this << "|(" << values.begin()->first << '=' << values.begin()->second;
-
-                for (const auto& [variable, fraction] : values | std::views::drop(1)) {
-                    GLOBAL_FORMATTING << ", " << variable << '=' << fraction;
-                }
-                GLOBAL_FORMATTING << ") = " << res << std::endl;
-            }
+            detail::print_substitute(*this, values, res);
         }
         return res;
     }
@@ -167,17 +151,7 @@ public:
             res = {};
         }
         if (origin && GLOBAL_FORMATTING.verbose) {
-            if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
-                GLOBAL_FORMATTING << detail::LaTeX(std::string("\\dfrac{")
-                                                       .append(variables.size() > 1 ? "d}{d" : "\\partial}{\\partial ")
-                                                       .append(wrt.to_latex())
-                                                       .append("}")
-                                                       .append(to_latex())
-                                                       .append("=")
-                                                       .append(res.to_latex()));
-            } else {
-                GLOBAL_FORMATTING << "d/dx(" << *this << ") = " << res << std::endl;
-            }
+            detail::print_differentiate(*this, wrt, res);
         }
         return res;
     }
@@ -208,20 +182,7 @@ public:
             n <<= 1;
         } while (std::abs(static_cast<Fraction>(res.substitute(sub, false)) - static_cast<Fraction>(prev.substitute(sub, false))) > tol);
         if (origin && GLOBAL_FORMATTING.verbose) {
-            if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
-                GLOBAL_FORMATTING << detail::LaTeX(std::string("\\int_{")
-                                                       .append(a.to_latex())
-                                                       .append("}^{")
-                                                       .append(b.to_latex())
-                                                       .append("}")
-                                                       .append(to_latex())
-                                                       .append("d")
-                                                       .append(wrt.to_latex())
-                                                       .append("=")
-                                                       .append(res.to_latex()));
-            } else {
-                GLOBAL_FORMATTING << "Integration of " << *this << 'd' << wrt << " from " << a << " to " << b << " = " << res << std::endl;
-            }
+            detail::print_integrate(*this, a, b, wrt, res);
         }
         return res;
     }

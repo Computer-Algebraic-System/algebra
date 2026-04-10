@@ -69,6 +69,13 @@ namespace algebra {
         RelationalOperator invert_relational_operator(RelationalOperator);
         bool evaluate_relational_operator(const Fraction&, RelationalOperator, const Fraction&);
         std::vector<std::vector<int>> generate_combinations(int, int);
+
+        template <typename T, typename U = Variable>
+        void print_substitute(const T&, const std::map<U, Fraction>&, const T&);
+        template <typename T, typename U = Variable>
+        void print_differentiate(const T&, const U&, const T&);
+        template <typename T, typename U = Fraction, typename V = Variable>
+        void print_integrate(const T&, const U&, const U&, const V&, const T&);
     } // namespace detail
 
     using SimplePolynomial = detail::AlgebraicExpression<Variable>;
@@ -76,11 +83,10 @@ namespace algebra {
     using SimpleExpression = detail::AlgebraicExpression<Function>;
     using RationalExpression = detail::AlgebraicContainer<Function>;
 
-    class Expression;
-
     namespace detail {
         enum class SerialClass : uint8_t {
-            RATIONAL,
+            BIG_INT,
+            FRACTION,
             COMPLEX,
             VARIABLE,
             FUNCTION,
@@ -108,4 +114,3 @@ namespace algebra {
 #include "src/interval.hpp"
 #include "src/graph.hpp"
 #include "src/defination.hpp"
-// #include "src/expression.hpp"
