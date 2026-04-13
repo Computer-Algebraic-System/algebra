@@ -174,8 +174,8 @@ namespace algebra {
     inline detail::FormatSettings GLOBAL_FORMATTING;
 
     namespace detail {
-        template <typename T, typename U>
-        void print_substitute(const T& initial, const std::map<U, Fraction>& values, const T& final) {
+        template <typename T, typename U, typename V>
+        void print_substitute(const T& initial, const std::map<U, Fraction>& values, const V& final) {
             if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
                 std::string str = "\\left.";
                 str.append(initial.to_latex()).append("\\right|_{");
@@ -195,18 +195,18 @@ namespace algebra {
             }
         }
 
-        template <typename T, typename U>
-        void print_differentiate(const T& initial, const U& wrt, const T& final) {
+        template <typename T, typename U, typename V>
+        void print_differentiate(const T& initial, const U& wrt, const V& final) {
             if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
                 GLOBAL_FORMATTING << LaTeX(
                     std::string("\\dfrac{d}{d").append(wrt.to_latex()).append("}").append(initial.to_latex()).append("=").append(final.to_latex()));
             } else {
-                GLOBAL_FORMATTING << "d/dx(" << initial << ") = " << final << std::endl;
+                GLOBAL_FORMATTING << "d/d" << wrt << "(" << initial << ") = " << final << std::endl;
             }
         }
 
-        template <typename T, typename U, typename V>
-        void print_integrate(const T& initial, const U& a, const U& b, const V& wrt, const T& final) {
+        template <typename T, typename U, typename V, typename W>
+        void print_integrate(const T& initial, const U& a, const U& b, const V& wrt, const W& final) {
             if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
                 GLOBAL_FORMATTING << LaTeX(std::string("\\int_{")
                                                .append(a.to_latex())

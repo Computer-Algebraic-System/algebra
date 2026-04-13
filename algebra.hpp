@@ -70,12 +70,12 @@ namespace algebra {
         bool evaluate_relational_operator(const Fraction&, RelationalOperator, const Fraction&);
         std::vector<std::vector<int>> generate_combinations(int, int);
 
-        template <typename T, typename U = Variable>
-        void print_substitute(const T&, const std::map<U, Fraction>&, const T&);
-        template <typename T, typename U = Variable>
-        void print_differentiate(const T&, const U&, const T&);
-        template <typename T, typename U = Fraction, typename V = Variable>
-        void print_integrate(const T&, const U&, const U&, const V&, const T&);
+        template <typename T, typename U, typename V>
+        void print_substitute(const T&, const std::map<U, Fraction>&, const V&);
+        template <typename T, typename U, typename V>
+        void print_differentiate(const T&, const U&, const V&);
+        template <typename T, typename U, typename V, typename W>
+        void print_integrate(const T&, const U&, const U&, const V&, const W&);
     } // namespace detail
 
     using SimplePolynomial = detail::AlgebraicExpression<Variable>;

@@ -10,7 +10,7 @@ public:
     Inequation() = default;
 
     Inequation(const RationalPolynomial& lhs, const RelationalOperator opr, const RationalPolynomial& rhs) : opr(opr) {
-        if (!rhs.is_fraction() || !static_cast<Fraction>(rhs) == 0) {
+        if (!rhs.is_fraction() || static_cast<Fraction>(rhs) != 0) {
             const RationalPolynomial temp = lhs / rhs;
             this->lhs = temp.numerator;
             this->rhs = temp.denominator;
