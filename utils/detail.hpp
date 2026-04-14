@@ -29,8 +29,8 @@ namespace algebra {
                 output = Output::LATEX;
                 filename = name;
                 file.open(filename);
-                file << "\\documentclass{article}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{"
-                        "document}\n";
+                file << "\\documentclass{article}\n\\usepackage[top=0.5in, bottom=1in, left=0.5in, right=0.5in]{geometry}\n\\usepackage{amsmath}\n"
+                        "\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{document}\n";
             }
 
             template <typename T>
@@ -127,6 +127,9 @@ namespace algebra {
 
             case RelationalOperator::EQ:
                 return "=";
+
+            case RelationalOperator::NE:
+                return "\\ne";
             }
             std::unreachable();
         }
@@ -146,7 +149,8 @@ namespace algebra {
                 return RelationalOperator::LE;
 
             case RelationalOperator::EQ:
-                return RelationalOperator::EQ;
+            case RelationalOperator::NE:
+                return opr;
             }
             std::unreachable();
         }
@@ -176,22 +180,24 @@ namespace algebra {
     namespace detail {
         template <typename T, typename U, typename V>
         void print_substitute(const T& initial, const std::map<U, Fraction>& values, const V& final) {
-            if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
-                std::string str = "\\left.";
-                str.append(initial.to_latex()).append("\\right|_{");
+            if (!values.empty()) {
+                if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
+                    std::string str = "\\left.";
+                    str.append(initial.to_latex()).append("\\right|_{");
 
-                for (const auto& [variable, fraction] : values) {
-                    str.append(variable.to_latex()).append("=").append(fraction.to_latex()).push_back(',');
-                }
-                str.pop_back();
-                GLOBAL_FORMATTING << LaTeX(str.append("}=").append(final.to_latex()));
-            } else {
-                GLOBAL_FORMATTING << initial << "|(" << values.begin()->first << '=' << values.begin()->second;
+                    for (const auto& [variable, fraction] : values) {
+                        str.append(variable.to_latex()).append("=").append(fraction.to_latex()).push_back(',');
+                    }
+                    str.pop_back();
+                    GLOBAL_FORMATTING << LaTeX(str.append("}=").append(final.to_latex()));
+                } else {
+                    GLOBAL_FORMATTING << initial << "|(" << values.begin()->first << '=' << values.begin()->second;
 
-                for (const auto& [variable, fraction] : values | std::views::drop(1)) {
-                    GLOBAL_FORMATTING << ", " << variable << '=' << fraction;
+                    for (const auto& [variable, fraction] : values | std::views::drop(1)) {
+                        GLOBAL_FORMATTING << ", " << variable << '=' << fraction;
+                    }
+                    GLOBAL_FORMATTING << ") = " << final << std::endl;
                 }
-                GLOBAL_FORMATTING << ") = " << final << std::endl;
             }
         }
 
@@ -242,6 +248,9 @@ namespace std {
 
         case algebra::RelationalOperator::EQ:
             return "=";
+
+        case algebra::RelationalOperator::NE:
+            return "!=";
         }
         std::unreachable();
     }

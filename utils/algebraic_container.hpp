@@ -61,7 +61,11 @@ public:
 
     AlgebraicContainer() : numerator(), denominator(1) {}
 
-    AlgebraicContainer(const Fraction& value) : numerator(value), denominator(1) { simplify(); }
+    AlgebraicContainer(const Fraction& value) : numerator(value), denominator(1) {
+        if (!value.is_infinity()) {
+            simplify();
+        }
+    }
 
     AlgebraicContainer(const T& value) : numerator(value), denominator(1) { simplify(); }
 

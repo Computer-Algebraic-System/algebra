@@ -215,7 +215,7 @@ public:
             denominator.append(std::to_string(coefficient.denominator));
         }
         for (const auto& [name, exponent] : variables) {
-            (exponent < 0 ? denominator : res).push_back(name.front());
+            (exponent < 0 ? denominator : res).append(name.front() == 'L' ? "\\lambda" : std::string(1, name.front()));
 
             if (name.size() > 1) {
                 (exponent < 0 ? denominator : res).append("_{").append(name.substr(1)).push_back('}');

@@ -73,7 +73,7 @@ public:
 
                 for (Fraction i = 0; i < limit; i += increment) {
                     substituent.begin()->second = i;
-                    y_vals.push_back(static_cast<double>(static_cast<Fraction>(simplified.substitute(substituent))));
+                    y_vals.push_back(static_cast<double>(static_cast<Fraction>(simplified.substitute(substituent, false))));
                 }
                 y_curves.emplace_back(std::move(y_vals), std::to_string(inequation));
             } else {
@@ -90,7 +90,7 @@ public:
         const int code = get_plot_fn()(file_name, x_vals, y_curves, pt_list, vertical_lines).cast<int>();
 
         if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
-            std::string latex("\\begin{center}\n\\includegraphics[width=\\textwidth]{");
+            std::string latex("\\begin{center}\n\\includegraphics[width=0.6\\textwidth]{");
             latex.append(file_name).append("}\n\\end{center}\n");
             GLOBAL_FORMATTING << latex;
         }

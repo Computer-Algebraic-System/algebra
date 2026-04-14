@@ -26,7 +26,7 @@ public:
 
     Fraction(const int numerator = 0, const int denominator = 1) : Fraction(BigInt(numerator), BigInt(denominator)) {}
 
-    Fraction(const BigInt& numerator, const BigInt& denominator) : numerator(numerator), denominator(denominator) { simplify(); }
+    Fraction(const BigInt& numerator, const BigInt& denominator = 1) : numerator(numerator), denominator(denominator) { simplify(); }
 
     template <typename T>
         requires std::floating_point<T>

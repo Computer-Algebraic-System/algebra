@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace algebra {
-    enum class RelationalOperator { LT, LE, GT, GE, EQ };
+    enum class RelationalOperator : uint8_t { LT, LE, GT, GE, EQ, NE };
 
     class BigInt;
     std::ostream& operator<<(std::ostream&, const BigInt&);
