@@ -13,8 +13,19 @@ namespace algebra {
 
         inline std::ostream& operator<<(std::ostream& out, const LaTeX& latex) { return out << latex.to_latex(); }
 
+        class HTML {
+            const std::string& html;
+
+        public:
+            HTML(const std::string& html) : html(html) {}
+
+            const std::string& to_html() const { return html; }
+        };
+
+        inline std::ostream& operator<<(std::ostream& out, const HTML& html) { return out << html.to_html(); }
+
         struct FormatSettings {
-            enum class Output { CONSOLE, FILE, LATEX } output = Output::CONSOLE;
+            enum class Output { CONSOLE, FILE, LATEX, HTML } output = Output::CONSOLE;
             bool was_math = false, verbose = true;
             std::ofstream file;
             std::string filename;
@@ -29,8 +40,16 @@ namespace algebra {
                 output = Output::LATEX;
                 filename = name;
                 file.open(filename);
-                file << "\\documentclass{article}\n\\usepackage[top=0.5in, bottom=1in, left=0.5in, right=0.5in]{geometry}\n\\usepackage{amsmath}\n"
-                        "\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{document}\n";
+                file << "\\documentclass{article}\n\\usepackage[fontsize=8.5pt]{fontsize}\n\\usepackage[top=0.5in, bottom=1in, left=0.5in, "
+                        "right=0.5in]D{geometry}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{"
+                        "document}\n";
+            }
+
+            void toggle_html(const std::string& name) {
+                output = Output::HTML;
+                filename = name;
+                file.open(filename);
+                file << "<html>\n<head>\n<style>\nmath[display='block'] {\nmargin-top: 35px;\nmargin-bottom: 35px;\n}\n</style>\n</head>\n<body>\n";
             }
 
             template <typename T>
@@ -47,6 +66,14 @@ namespace algebra {
                         if constexpr (requires(const T& obj) { obj.to_latex(); }) {
                             fmt.file << "\\begin{align*}\n" << object.to_latex() << "\\end{align*}\n";
                             fmt.was_math = true;
+                        } else {
+                            fmt.file << object;
+                        }
+                        break;
+
+                    case Output::HTML:
+                        if constexpr (requires(const T& obj) { obj.to_html(); }) {
+                            fmt.file << "<math display='block'>\n" << object.to_html() << "\n</math>";
                         } else {
                             fmt.file << object;
                         }
@@ -73,6 +100,7 @@ namespace algebra {
                         }
                         break;
 
+                    case Output::HTML:
                     case Output::FILE:
                         manip(fmt.file);
                         break;
@@ -89,7 +117,7 @@ namespace algebra {
 
                 case Output::LATEX:
                     {
-                        *this << "\\end{document}\n";
+                        file << "\\end{document}\n";
                         file.close();
                         const std::string base = filename.substr(0, filename.size() - 4);
                         std::string command("pdflatex -interaction=nonstopmode ");
@@ -104,6 +132,11 @@ namespace algebra {
                                    .c_str());
                         break;
                     }
+
+                case Output::HTML:
+                    file << "</body>\n</html>\n";
+                    file.close();
+                    break;
 
                 case Output::CONSOLE:
                     break;
@@ -181,8 +214,11 @@ namespace algebra {
         template <typename T, typename U, typename V>
         void print_substitute(const T& initial, const std::map<U, Fraction>& values, const V& final) {
             if (!values.empty()) {
-                if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
-                    std::string str = "\\left.";
+                std::string str;
+
+                switch (GLOBAL_FORMATTING.output) {
+                case FormatSettings::Output::LATEX:
+                    str = "\\left.";
                     str.append(initial.to_latex()).append("\\right|_{");
 
                     for (const auto& [variable, fraction] : values) {
@@ -190,7 +226,24 @@ namespace algebra {
                     }
                     str.pop_back();
                     GLOBAL_FORMATTING << LaTeX(str.append("}=").append(final.to_latex()));
-                } else {
+
+                    break;
+
+                case FormatSettings::Output::HTML:
+                    str.append(initial.to_html())
+                        .append("<msub><mo>|</mo><mrow>")
+                        .append(values.begin()->first.to_html())
+                        .append("<mo>=</mo>")
+                        .append(values.begin()->second.to_html());
+
+                    for (const auto& [variable, fraction] : values | std::views::drop(1)) {
+                        str.append("<mo>,</mo><mspace width='5px'/>").append(variable.to_html()).append("<mo>=</mo>").append(fraction.to_html());
+                    }
+                    GLOBAL_FORMATTING << HTML(str.append("</mrow></msub><mo>=</mo>").append(final.to_html()));
+                    break;
+
+                case FormatSettings::Output::FILE:
+                case FormatSettings::Output::CONSOLE:
                     GLOBAL_FORMATTING << initial << "|(" << values.begin()->first << '=' << values.begin()->second;
 
                     for (const auto& [variable, fraction] : values | std::views::drop(1)) {
@@ -203,17 +256,30 @@ namespace algebra {
 
         template <typename T, typename U, typename V>
         void print_differentiate(const T& initial, const U& wrt, const V& final) {
-            if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
+            switch (GLOBAL_FORMATTING.output) {
+            case FormatSettings::Output::LATEX:
                 GLOBAL_FORMATTING << LaTeX(
                     std::string("\\dfrac{d}{d").append(wrt.to_latex()).append("}").append(initial.to_latex()).append("=").append(final.to_latex()));
-            } else {
+                break;
+
+            case FormatSettings::Output::HTML:
+                GLOBAL_FORMATTING << HTML(std::string("<mfrac><mi>d</mi><mrow><mi>d</mi><mi>")
+                                              .append(wrt.to_html().append("</mi></mrow></mfrac>"))
+                                              .append(initial.to_html())
+                                              .append("<mo>=</mo>")
+                                              .append(final.to_html()));
+                break;
+
+            case FormatSettings::Output::FILE:
+            case FormatSettings::Output::CONSOLE:
                 GLOBAL_FORMATTING << "d/d" << wrt << "(" << initial << ") = " << final << std::endl;
             }
         }
 
         template <typename T, typename U, typename V, typename W>
         void print_integrate(const T& initial, const U& a, const U& b, const V& wrt, const W& final) {
-            if (GLOBAL_FORMATTING.output == FormatSettings::Output::LATEX) {
+            switch (GLOBAL_FORMATTING.output) {
+            case FormatSettings::Output::LATEX:
                 GLOBAL_FORMATTING << LaTeX(std::string("\\int_{")
                                                .append(a.to_latex())
                                                .append("}^{")
@@ -224,7 +290,22 @@ namespace algebra {
                                                .append(wrt.to_latex())
                                                .append("=")
                                                .append(final.to_latex()));
-            } else {
+                break;
+
+            case FormatSettings::Output::HTML:
+                GLOBAL_FORMATTING << HTML(std::string("<msubsup><mo>&int;</mo>")
+                                              .append(a.to_html())
+                                              .append(b.to_html())
+                                              .append("</msubsup>")
+                                              .append(initial.to_html())
+                                              .append("<mspace width='5px'/><mi>d</mi>")
+                                              .append(wrt.to_html())
+                                              .append("<mo>=</mo>")
+                                              .append(final.to_html()));
+                break;
+
+            case FormatSettings::Output::FILE:
+            case FormatSettings::Output::CONSOLE:
                 GLOBAL_FORMATTING << "Integration of " << initial << 'd' << wrt << " from " << a << " to " << b << " = " << final << std::endl;
             }
         }

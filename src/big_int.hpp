@@ -145,6 +145,10 @@ public:
         return -1;
     }
 
+    std::string to_latex() const { return std::string(*this); }
+
+    std::string to_html() const { return "<mn>" + std::string(*this).append("</mn>"); }
+
     void serialize(std::ofstream& out) const {
         const bool neg = value < 0;
         const boost::multiprecision::cpp_int abs_val = neg ? -value : value;

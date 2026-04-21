@@ -209,10 +209,10 @@ public:
                 res.push_back('-');
             }
         } else {
-            res.append(std::to_string(coefficient.numerator));
+            res.append(coefficient.numerator.to_latex());
         }
         if (coefficient.denominator != 1) {
-            denominator.append(std::to_string(coefficient.denominator));
+            denominator.append(coefficient.denominator.to_latex());
         }
         for (const auto& [name, exponent] : variables) {
             (exponent < 0 ? denominator : res).append(name.front() == 'L' ? "\\lambda" : std::string(1, name.front()));
@@ -226,6 +226,46 @@ public:
         }
         if (fractional) {
             res.append(denominator).push_back('}');
+        }
+        return res;
+    }
+
+    std::string to_html() const {
+        if (variables.empty()) {
+            return coefficient.to_html();
+        }
+        if (coefficient == 0) {
+            return "<mn>0</mn>";
+        }
+        std::string res, denominator;
+        const bool fractional = std::ranges::find_if(
+                                    variables, [](const Fraction& exponent) -> bool { return exponent < 0; }, &Var::exponent) != variables.end() ||
+            coefficient.denominator != 1;
+
+        if (std::abs(coefficient.numerator) == 1) {
+            if (coefficient.numerator == -1) {
+                res.append("<mo>-</mo>");
+            }
+        } else {
+            res.append(coefficient.numerator.to_html());
+        }
+        if (coefficient.denominator != 1) {
+            denominator.append(coefficient.denominator.to_html());
+        }
+        for (const auto& [name, exponent] : variables) {
+            std::string var;
+            var.append("<mi>").append(name.front() == 'L' ? "&lambda;" : std::string(1, name.front())).append("</mi>");
+
+            if (name.size() > 1) {
+                var.insert(0, "<msub>").append("<mn>").append(name.substr(1)).append("</mn></msub>");
+            }
+            if (std::abs(exponent) != 1) {
+                var.insert(0, "<msup>").append(exponent.to_html()).append("</msup>");
+            }
+            (exponent < 0 ? denominator : res).append(var);
+        }
+        if (fractional) {
+            res.insert(0, "<mfrac><mrow>").append("</mrow><mrow>").append(denominator).append("</mrow></mfrac>");
         }
         return res;
     }

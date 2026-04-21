@@ -51,6 +51,9 @@ namespace algebra {
         class LaTeX;
         std::ostream& operator<<(std::ostream&, const LaTeX&);
 
+        class HTML;
+        std::ostream& operator<<(std::ostream&, const HTML&);
+
         struct FormatSettings;
 
         template <typename T>

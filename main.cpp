@@ -5,6 +5,7 @@ using namespace algebra;
 int main() {
     // GLOBAL_FORMATTING.toggle_file("output.txt");
     // GLOBAL_FORMATTING.toggle_latex("latex.tex");
+    GLOBAL_FORMATTING.toggle_html("output.html");
     detail::FormatSettings& out = GLOBAL_FORMATTING;
     Variable x("x"), y("y"), z("z");
     out << Fraction(2, 3) << std::endl; // 2/3
@@ -50,6 +51,7 @@ int main() {
     out << v.integrate(x, 1, 2) << std::endl;
     out << v.integrate(y, 1, 2) << std::endl;
     out << v.integrate(z, 1, 2) << std::endl;
+    /*
     out << (v + v.differentiate(x) + v.differentiate(y) + v.differentiate(z)) << std::endl;
     out << (v + v.differentiate(x) >= v.differentiate(y) + v.differentiate(z)) << std::endl;
     out << (v + v.differentiate(x) >= v.differentiate(y) + v.differentiate(z)).differentiate(x) << std::endl;
@@ -80,5 +82,6 @@ int main() {
                              {Fraction(0), "otherwise"},
                          });
     out << def;
+    */
     return 0;
 }

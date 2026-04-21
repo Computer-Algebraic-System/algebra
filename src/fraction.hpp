@@ -159,6 +159,8 @@ public:
     Fraction reciprocate() const { return Fraction(denominator, numerator); }
 
     std::string to_latex() const;
+
+    std::string to_html() const;
 };
 
 namespace algebra {
@@ -232,10 +234,30 @@ inline std::string algebra::Fraction::to_latex() const {
     if (denominator != 1) {
         res.append("\\frac{");
     }
-    res.append(std::to_string(std::abs(numerator)));
+    res.append(std::abs(numerator).to_latex());
 
     if (denominator != 1) {
-        res.append("}{").append(std::to_string(denominator)).append("}");
+        res.append("}{").append(denominator.to_latex()).append("}");
+    }
+    return res;
+}
+
+inline std::string algebra::Fraction::to_html() const {
+    std::string res;
+
+    if (numerator < 0) {
+        res.append("<mo>-</mo>");
+    }
+    if (is_infinity()) {
+        return res.append("<mn>&infin;</mn>");
+    }
+    if (denominator != 1) {
+        res.append("<mfrac>");
+    }
+    res.append(std::abs(numerator).to_html());
+
+    if (denominator != 1) {
+        res.append(denominator.to_html()).append("</mfrac>");
     }
     return res;
 }
