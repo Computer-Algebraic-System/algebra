@@ -167,6 +167,29 @@ namespace algebra {
             std::unreachable();
         }
 
+        inline std::string to_html(const RelationalOperator opr) {
+            switch (opr) {
+            case RelationalOperator::LT:
+                return "<mo>&lt;</mo>";
+
+            case RelationalOperator::LE:
+                return "<mo>&le;</mo>";
+
+            case RelationalOperator::GT:
+                return "<mo>&gt;</mo>";
+
+            case RelationalOperator::GE:
+                return "<mo>&ge;</mo>";
+
+            case RelationalOperator::EQ:
+                return "<mo>=</mo>";
+
+            case RelationalOperator::NE:
+                return "<mo>&ne;</mo>";
+            }
+            std::unreachable();
+        }
+
         inline RelationalOperator invert_relational_operator(const RelationalOperator opr) {
             switch (opr) {
             case RelationalOperator::LT:

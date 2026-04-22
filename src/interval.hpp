@@ -81,6 +81,8 @@ public:
         return Inequation(lhs, opr1, mid).to_latex().append(" ").append(detail::to_latex(opr2)).append(" ").append(rhs.to_latex());
     }
 
+    std::string to_html() const;
+
     void serialize(std::ofstream& out) const {
         out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
         lhs.serialize(out);

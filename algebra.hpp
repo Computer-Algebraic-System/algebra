@@ -69,6 +69,7 @@ namespace algebra {
         std::ostream& operator<<(std::ostream&, const AlgebraicContainer<T>&);
 
         std::string to_latex(RelationalOperator);
+        std::string to_html(RelationalOperator);
         RelationalOperator invert_relational_operator(RelationalOperator);
         bool evaluate_relational_operator(const Fraction&, RelationalOperator, const Fraction&);
         std::vector<std::vector<int>> generate_combinations(int, int);

@@ -159,6 +159,20 @@ public:
         return "0";
     }
 
+    std::string to_html() const {
+        std::string res;
+
+        if (!terms.empty()) {
+            res.append(terms.front().to_html());
+
+            for (const T& value : terms | std::views::drop(1)) {
+                res.append(value.coefficient < 0 ? "<mo>-</mo>" : "<mo>+</mo>").append(std::abs(value).to_html());
+            }
+            return res;
+        }
+        return "<mn>0</mn>";
+    }
+
     explicit operator Fraction() const {
         assert(is_fraction());
 

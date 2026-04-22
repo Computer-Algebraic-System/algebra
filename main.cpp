@@ -51,7 +51,6 @@ int main() {
     out << v.integrate(x, 1, 2) << std::endl;
     out << v.integrate(y, 1, 2) << std::endl;
     out << v.integrate(z, 1, 2) << std::endl;
-    /*
     out << (v + v.differentiate(x) + v.differentiate(y) + v.differentiate(z)) << std::endl;
     out << (v + v.differentiate(x) >= v.differentiate(y) + v.differentiate(z)) << std::endl;
     out << (v + v.differentiate(x) >= v.differentiate(y) + v.differentiate(z)).differentiate(x) << std::endl;
@@ -82,6 +81,5 @@ int main() {
                              {Fraction(0), "otherwise"},
                          });
     out << def;
-    */
     return 0;
 }

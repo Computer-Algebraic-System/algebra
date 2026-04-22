@@ -28,6 +28,22 @@ public:
         return res.append("\\end{cases}\n");
     }
 
+    std::string to_html() const {
+        std::string res = "<mi>f</mi><mo stretchy='false'>(</mo>";
+        res.append(function_of.front().to_html());
+
+        for (const Variable& variable : function_of | std::views::drop(1)) {
+            res.append("<mo>,</mo>").append(variable.to_html());
+        }
+        res.append("<mo stretchy='false'>)</mo><mo>=</mo><mo fence='true' stretchy='true'>{</mo><mtable columnalign='left' columnspacing='2.5em' "
+                   "rowspacing='1.5em'>");
+
+        for (const auto& [lhs, rhs] : definitions) {
+            res.append("<mtr><mtd>").append(lhs.to_html()).append("</mtd><mtd>").append(rhs).append("</mtd></mtr>");
+        }
+        return res.append("</mtable>");
+    }
+
     void serialize(std::ofstream& out) const {
         out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
         size_t size = function_of.size();

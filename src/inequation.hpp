@@ -140,7 +140,9 @@ public:
         return res;
     }
 
-    std::string to_latex() const { return lhs.to_latex().append(" ").append(detail::to_latex(opr)).append(" ").append(rhs.to_latex()); }
+    std::string to_latex() const { return lhs.to_latex().append(detail::to_latex(opr)).append(rhs.to_latex()); }
+
+    std::string to_html() const { return lhs.to_html().append(detail::to_html(opr)).append(rhs.to_html()); }
 
     bool is_bool() const { return lhs.is_fraction() && rhs.is_fraction(); }
 
@@ -203,7 +205,7 @@ inline algebra::Equation operator==(const algebra::SimplePolynomial& lhs, const 
     return algebra::Equation(lhs, rhs);
 }
 
-inline algebra::Equation operator!=(const algebra::SimplePolynomial& lhs, const algebra::SimplePolynomial& rhs) {
+inline algebra::Inequation operator!=(const algebra::SimplePolynomial& lhs, const algebra::SimplePolynomial& rhs) {
     return algebra::Inequation(lhs, algebra::RelationalOperator::NE, rhs);
 }
 

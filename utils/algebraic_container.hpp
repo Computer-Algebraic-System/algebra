@@ -212,6 +212,26 @@ public:
         return res;
     }
 
+    std::string to_html() const {
+        if (numerator.terms.empty()) {
+            return "<mn>0</mn>";
+        }
+        std::string res;
+
+        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+            res.append("<mfrac><mrow>");
+        }
+        res.append(numerator.to_html());
+
+        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+            res.append("</mrow><mrow>");
+        }
+        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+            res.append(denominator.to_html()).append("</mrow></mfrac>");
+        }
+        return res;
+    }
+
     explicit operator Fraction() const {
         assert(is_fraction());
 
