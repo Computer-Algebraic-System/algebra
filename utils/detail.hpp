@@ -73,7 +73,8 @@ namespace algebra {
 
                     case Output::HTML:
                         if constexpr (requires(const T& obj) { obj.to_html(); }) {
-                            fmt.file << "<math display='block'>\n" << object.to_html() << "\n</math>";
+                            fmt.file << "<math display='block'>" << object.to_html() << "</math>\n";
+                            fmt.was_math = true;
                         } else {
                             fmt.file << object;
                         }
@@ -101,6 +102,11 @@ namespace algebra {
                         break;
 
                     case Output::HTML:
+                        if (!fmt.was_math) {
+                            fmt.file << "<br>\n";
+                        }
+                        break;
+
                     case Output::FILE:
                         manip(fmt.file);
                         break;
@@ -286,11 +292,12 @@ namespace algebra {
                 break;
 
             case FormatSettings::Output::HTML:
-                GLOBAL_FORMATTING << HTML(std::string("<mfrac><mi>d</mi><mrow><mi>d</mi><mi>")
-                                              .append(wrt.to_html().append("</mi></mrow></mfrac>"))
+                GLOBAL_FORMATTING << HTML(std::string("<mfrac><mi>d</mi><mrow><mi>d</mi><mrow>")
+                                              .append(wrt.to_html().append("</mrow></mrow></mfrac><mrow>"))
                                               .append(initial.to_html())
-                                              .append("<mo>=</mo>")
-                                              .append(final.to_html()));
+                                              .append("</mrow><mo>=</mo><mrow>")
+                                              .append(final.to_html())
+                                              .append("</mrow>"));
                 break;
 
             case FormatSettings::Output::FILE:

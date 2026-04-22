@@ -108,6 +108,25 @@ public:
         return res;
     }
 
+    std::string to_html() const {
+        if (*this == 0) {
+            return "<mo>0</mo>";
+        }
+        std::string res;
+
+        if (real != 0) {
+            res.append(real.to_html());
+
+            if (imag != 0) {
+                res.append(imag < 0 ? "<mo>-</mo>" : "<mo>+</mo>");
+            }
+        }
+        if (imag != 0) {
+            res.append(std::abs(imag).to_html()).append("<mi>i</mi>");
+        }
+        return res;
+    }
+
     void serialize(std::ofstream& out) const {
         out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
         real.serialize(out);
