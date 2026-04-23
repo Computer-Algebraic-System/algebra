@@ -88,11 +88,23 @@ public:
             pt_list.emplace_back(std::to_string(px), std::to_string(py));
         }
         const int code = get_plot_fn()(file_name, x_vals, y_curves, pt_list, vertical_lines).cast<int>();
+        std::string str;
 
-        if (GLOBAL_FORMATTING.output == detail::FormatSettings::Output::LATEX) {
-            std::string latex("\\begin{center}\n\\includegraphics[width=0.6\\textwidth]{");
-            latex.append(file_name).append("}\n\\end{center}\n");
-            GLOBAL_FORMATTING << latex;
+        switch (GLOBAL_FORMATTING.output) {
+        case detail::FormatSettings::Output::LATEX:
+            str.append("\\begin{center}\n\\includegraphics[width=0.6\\textwidth]{").append(file_name).append("}\n\\end{center}\n");
+            GLOBAL_FORMATTING << str;
+            break;
+
+        case detail::FormatSettings::Output::HTML:
+            str.append("<div style='text-align: center'><img src='")
+                .append(file_name)
+                .append("' style='width: 30%; height: auto;'></div>\n");
+            GLOBAL_FORMATTING << str;
+            break;
+
+        default:
+            break;
         }
         return code;
     }

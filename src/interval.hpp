@@ -77,11 +77,9 @@ public:
         return res;
     }
 
-    std::string to_latex() const {
-        return Inequation(lhs, opr1, mid).to_latex().append(" ").append(detail::to_latex(opr2)).append(" ").append(rhs.to_latex());
-    }
+    std::string to_latex() const { return Inequation(lhs, opr1, mid).to_latex().append(detail::to_latex(opr2)).append(rhs.to_latex()); }
 
-    std::string to_html() const;
+    std::string to_html() const { return Inequation(lhs, opr1, mid).to_html().append(detail::to_html(opr2)).append(rhs.to_html()); }
 
     void serialize(std::ofstream& out) const {
         out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
