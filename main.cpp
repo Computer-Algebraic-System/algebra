@@ -3,9 +3,11 @@
 using namespace algebra;
 
 int main() {
-    // GLOBAL_FORMATTING.toggle_file("output.txt");
-    // GLOBAL_FORMATTING.toggle_latex("latex.tex");
-    GLOBAL_FORMATTING.toggle_html("output.html");
+    // GLOBAL_FORMATTING.toggle_file();
+    // GLOBAL_FORMATTING.toggle_latex();
+    // GLOBAL_FORMATTING.toggle_html();
+    // GLOBAL_FORMATTING.toggle_manim("output", detail::FormatSettings::Quality::UHD_2160P60);
+
     detail::FormatSettings& out = GLOBAL_FORMATTING;
     Variable x("x"), y("y"), z("z");
     out << Fraction(2, 3) << std::endl; // 2/3

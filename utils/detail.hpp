@@ -25,31 +25,42 @@ namespace algebra {
         inline std::ostream& operator<<(std::ostream& out, const HTML& html) { return out << html.to_html(); }
 
         struct FormatSettings {
-            enum class Output { CONSOLE, FILE, LATEX, HTML } output = Output::CONSOLE;
+            enum class Output { CONSOLE, FILE, LATEX, HTML, MANIM } output = Output::CONSOLE;
+            enum class Quality { LOW_480P15, MEDIUM_720P30, HIGH_1080P60, PRODUCTION_1440P60, UHD_2160P60 } quality = Quality::LOW_480P15;
             bool was_math = false, verbose = true;
             std::ofstream file;
-            std::string filename;
+            std::string filename, interpreter_path;
 
-            void toggle_file(const std::string& name) {
+            void toggle_file(const std::string& name = "output") {
                 output = Output::FILE;
-                filename = name;
+                filename = name + ".txt";
                 file.open(filename);
             }
 
-            void toggle_latex(const std::string& name) {
+            void toggle_latex(const std::string& name = "output") {
                 output = Output::LATEX;
-                filename = name;
+                filename = name + ".tex";
                 file.open(filename);
                 file << "\\documentclass{article}\n\\usepackage[fontsize=8.5pt]{fontsize}\n\\usepackage[top=0.5in, bottom=1in, left=0.5in, "
-                        "right=0.5in]D{geometry}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{"
+                        "right=0.5in]{geometry}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{"
                         "document}\n";
             }
 
-            void toggle_html(const std::string& name) {
+            void toggle_html(const std::string& name = "output") {
                 output = Output::HTML;
-                filename = name;
+                filename = name + ".html";
                 file.open(filename);
                 file << "<html>\n<head>\n<style>\nmath[display='block'] {\nmargin-top: 35px;\nmargin-bottom: 35px;\n}\n</style>\n</head>\n<body>\n";
+            }
+
+            void toggle_manim(const std::string& name = "output", const Quality quality = Quality::LOW_480P15,
+                              const std::string& interpreter_path = "/home/dream/.virtualenvs/python") {
+                output = Output::MANIM;
+                this->quality = quality;
+                this->interpreter_path = interpreter_path + "/bin/activate";
+                filename = name + ".py";
+                file.open(filename);
+                file << "from manim import *\n\nclass Output(MovingCameraScene):\n\tdef construct(self):\n\t\tprev = VectorizedPoint(ORIGIN)\n";
             }
 
             template <typename T>
@@ -60,6 +71,10 @@ namespace algebra {
                     switch (fmt.output) {
                     case Output::CONSOLE:
                         std::cout << object;
+                        break;
+
+                    case Output::FILE:
+                        fmt.file << object;
                         break;
 
                     case Output::LATEX:
@@ -80,9 +95,17 @@ namespace algebra {
                         }
                         break;
 
-                    case Output::FILE:
-                        fmt.file << object;
-                        break;
+                    case Output::MANIM:
+                        fmt.file << "\t\tcurrent = ";
+
+                        if constexpr (requires(const T& obj) { obj.to_latex(); }) {
+                            fmt.file << "MathTex(r'''" << object.to_latex();
+                        } else {
+                            fmt.file << "Text(r'''" << object;
+                        }
+                        fmt.file << "''').next_to(prev, DOWN, buff=0.5)\n"
+                                    "\t\tself.play(self.camera.frame.animate.move_to(current))\n"
+                                    "\t\tself.play(Write(current.scale(0.5)))\n\t\tprev = current\n\n";
                     }
                 }
                 return fmt;
@@ -93,6 +116,10 @@ namespace algebra {
                     switch (fmt.output) {
                     case Output::CONSOLE:
                         manip(std::cout);
+                        break;
+
+                    case Output::FILE:
+                        manip(fmt.file);
                         break;
 
                     case Output::LATEX:
@@ -107,8 +134,7 @@ namespace algebra {
                         }
                         break;
 
-                    case Output::FILE:
-                        manip(fmt.file);
+                    case Output::MANIM:
                         break;
                     }
                 }
@@ -119,6 +145,7 @@ namespace algebra {
                 switch (output) {
                 case Output::FILE:
                     file.close();
+                    std::filesystem::rename(filename, "outputs/" + filename);
                     break;
 
                 case Output::LATEX:
@@ -136,12 +163,53 @@ namespace algebra {
                                    .append(base)
                                    .append(".tex")
                                    .c_str());
+                        filename = base + ".pdf";
+                        std::filesystem::rename(filename, "outputs/" + filename);
                         break;
                     }
 
                 case Output::HTML:
                     file << "</body>\n</html>\n";
                     file.close();
+                    std::filesystem::rename(filename, "outputs/" + filename);
+                    break;
+
+                case Output::MANIM:
+                    {
+                        file << "\t\tself.wait()";
+                        file.close();
+                        std::string command = std::string(". ").append(interpreter_path).append("&& manim"), old_path = "media/videos/output/";
+
+                        switch (quality) {
+                        case Quality::LOW_480P15:
+                            command.append(" -ql ");
+                            old_path.append("480p15");
+                            break;
+
+                        case Quality::MEDIUM_720P30:
+                            command.append(" -qm ");
+                            old_path.append("720p30");
+                            break;
+
+                        case Quality::HIGH_1080P60:
+                            command.append(" -qh ");
+                            old_path.append("1080p60");
+                            break;
+
+                        case Quality::PRODUCTION_1440P60:
+                            command.append(" -qp ");
+                            old_path.append("1440p60");
+                            break;
+
+                        case Quality::UHD_2160P60:
+                            command.append(" -qk ");
+                            old_path.append("2160p60");
+                            break;
+                        }
+                        system(command.append(filename).append(" Output && rm -f ").append(filename).c_str());
+                        std::filesystem::rename(old_path.append("/Output.mp4"), "outputs/" + filename.substr(0, filename.size() - 3) + ".mp4");
+                        system("rm -rf media");
+                    }
                     break;
 
                 case Output::CONSOLE:
