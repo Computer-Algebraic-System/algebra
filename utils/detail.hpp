@@ -206,7 +206,7 @@ namespace algebra {
                             old_path.append("2160p60");
                             break;
                         }
-                        system(command.append(filename).append(" Output && rm -f ").append(filename).c_str());
+                        system(command.append(filename).append(" --disable_caching Output && rm -f ").append(filename).c_str());
                         std::filesystem::rename(old_path.append("/Output.mp4"), "outputs/" + filename.substr(0, filename.size() - 3) + ".mp4");
                         system("rm -rf media");
                     }
