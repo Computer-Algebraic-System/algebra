@@ -6,22 +6,22 @@ class algebra::Variable {
 public:
     struct Var {
         std::string name;
-        Fraction exponent;
+        double exponent;
 
-        std::strong_ordering operator<=>(const Var& value) const { return std::tuple(-exponent, name) <=> std::tuple(-value.exponent, value.name); }
+        std::partial_ordering operator<=>(const Var& value) const { return std::tuple(value.exponent, name) <=> std::tuple(exponent, value.name); }
 
         bool operator==(const Var&) const = default;
     };
-    Fraction coefficient;
+    double coefficient;
     std::vector<Var> variables;
 
     Variable() = default;
 
     Variable(const std::string& name) : Variable(1, name) {}
 
-    Variable(const Fraction& coefficient) : coefficient(coefficient) {}
+    Variable(const double coefficient) : coefficient(coefficient) {}
 
-    Variable(const Fraction& coefficient, const std::string& name) : coefficient(coefficient), variables({{name, 1}}) {}
+    Variable(const double coefficient, const std::string& name) : coefficient(coefficient), variables({{name, 1}}) {}
 
     Variable operator-() const {
         Variable res = *this;
@@ -29,9 +29,9 @@ public:
         return res;
     }
 
-    Variable& operator*=(const Fraction& value) { return *this *= Variable(value); }
+    Variable& operator*=(const double value) { return *this *= Variable(value); }
 
-    Variable operator*(const Fraction& value) const { return *this * Variable(value); }
+    Variable operator*(const double value) const { return *this * Variable(value); }
 
     Variable& operator*=(const Variable& value) {
         coefficient *= value.coefficient;
@@ -57,9 +57,9 @@ public:
 
     Variable operator*(const Variable& value) const { return Variable(*this) *= value; }
 
-    Variable& operator/=(const Fraction& value) { return *this /= Variable(value); }
+    Variable& operator/=(const double value) { return *this /= Variable(value); }
 
-    Variable operator/(const Fraction& value) const { return *this / Variable(value); }
+    Variable operator/(const double value) const { return *this / Variable(value); }
 
     Variable& operator/=(const Variable& value) {
         coefficient /= value.coefficient;
@@ -81,8 +81,8 @@ public:
 
     Variable operator/(const Variable& value) const { return Variable(*this) /= value; }
 
-    Variable& operator^=(const Fraction& value) {
-        coefficient ^= value;
+    Variable& operator^=(const double value) {
+        coefficient = std::pow(coefficient, value);
 
         if (value == 0) {
             variables.clear();
@@ -94,10 +94,10 @@ public:
         return *this;
     }
 
-    Variable operator^(const Fraction& value) const { return Variable(*this) ^= value; }
+    Variable operator^(const double value) const { return Variable(*this) ^= value; }
 
-    std::strong_ordering operator<=>(const Variable& value) const {
-        const bool is_const = is_fraction(), value_const = value.is_fraction();
+    std::partial_ordering operator<=>(const Variable& value) const {
+        const bool is_const = is_number(), value_const = value.is_number();
 
         if (is_const != value_const) {
             return is_const ? std::strong_ordering::greater : std::strong_ordering::less;
@@ -113,7 +113,7 @@ public:
         return res;
     }
 
-    Variable substitute(const std::map<Variable, Fraction>& values, const bool origin = true) const {
+    Variable substitute(const std::map<Variable, double>& values, const bool origin = true) const {
         Variable res = *this;
 
         for (const auto& [variable, value] : values) {
@@ -122,7 +122,7 @@ public:
             const auto itr = std::ranges::find(res.variables, name, &Var::name);
 
             if (itr != res.variables.end()) {
-                res.coefficient *= value ^ itr->exponent;
+                res.coefficient *= std::pow(value, itr->exponent);
                 res.variables.erase(itr);
             }
             if (res.coefficient == 0) {
@@ -156,18 +156,18 @@ public:
         return res;
     }
 
-    Variable integrate(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
+    Variable integrate(const Variable& wrt, const double a, const double b, const bool origin = true) const {
         assert(wrt.variables.size() == 1);
-        static auto tol = Fraction(10) ^ -9;
+        static auto tol = std::pow(10, -9);
         int n = 2;
         Variable res, prev;
-        std::map<Variable, Fraction> substituent{{wrt, a}}, sub;
+        std::map<Variable, double> substituent{{wrt, a}}, sub;
 
         for (const auto& [name, exponent] : variables) {
             sub.emplace(name, 1);
         }
         do {
-            const Fraction h = (b - a) / n;
+            const double h = (b - a) / n;
             prev = res;
             substituent.begin()->second = a;
             res = substitute(substituent, false);
@@ -180,39 +180,33 @@ public:
             res.coefficient += substitute(substituent, false).coefficient;
             res *= h / 3;
             n <<= 1;
-        } while (std::abs(static_cast<Fraction>(res.substitute(sub, false)) - static_cast<Fraction>(prev.substitute(sub, false))) > tol);
+        } while (std::abs(static_cast<double>(res.substitute(sub, false)) - static_cast<double>(prev.substitute(sub, false))) > tol);
         if (origin && GLOBAL_FORMATTING.verbose) {
             detail::print_integrate(*this, a, b, wrt, res);
         }
         return res;
     }
 
-    bool is_fraction() const { return variables.empty(); }
+    bool is_number() const { return variables.empty(); }
 
     std::string to_latex() const {
         if (variables.empty()) {
-            return coefficient.to_latex();
+            return detail::LaTeX(coefficient).to_latex();
         }
         if (coefficient == 0) {
             return "0";
         }
         std::string res, denominator = "}{";
-        const bool fractional = std::ranges::find_if(
-                                    variables, [](const Fraction& exponent) -> bool { return exponent < 0; }, &Var::exponent) != variables.end() ||
-            coefficient.denominator != 1;
+        const bool fractional =
+            std::ranges::find_if(variables, [](const double exponent) -> bool { return exponent < 0; }, &Var::exponent) != variables.end();
 
         if (fractional) {
             res.append("\\dfrac{");
         }
-        if (std::abs(coefficient.numerator) == 1) {
-            if (coefficient.numerator == -1) {
-                res.push_back('-');
-            }
-        } else {
-            res.append(coefficient.numerator.to_latex());
-        }
-        if (coefficient.denominator != 1) {
-            denominator.append(coefficient.denominator.to_latex());
+        if (coefficient == -1) {
+            res.push_back('-');
+        } else if (std::abs(coefficient) != 1) {
+            res.append(detail::LaTeX(coefficient).to_latex());
         }
         for (const auto& [name, exponent] : variables) {
             (exponent < 0 ? denominator : res).append(name.front() == 'L' ? "\\lambda" : std::string(1, name.front()));
@@ -221,7 +215,7 @@ public:
                 (exponent < 0 ? denominator : res).append("_{").append(name.substr(1)).push_back('}');
             }
             if (std::abs(exponent) != 1) {
-                (exponent < 0 ? denominator : res).append("^{").append(std::abs(exponent).to_latex()).push_back('}');
+                (exponent < 0 ? denominator : res).append("^{").append(detail::LaTeX(std::abs(exponent)).to_latex()).push_back('}');
             }
         }
         if (fractional) {
@@ -232,25 +226,19 @@ public:
 
     std::string to_html() const {
         if (variables.empty()) {
-            return coefficient.to_html();
+            return detail::HTML(coefficient).to_html();
         }
         if (coefficient == 0) {
             return "<mn>0</mn>";
         }
         std::string res, denominator;
-        const bool fractional = std::ranges::find_if(
-                                    variables, [](const Fraction& exponent) -> bool { return exponent < 0; }, &Var::exponent) != variables.end() ||
-            coefficient.denominator != 1;
+        const bool fractional =
+            std::ranges::find_if(variables, [](const double exponent) -> bool { return exponent < 0; }, &Var::exponent) != variables.end();
 
-        if (std::abs(coefficient.numerator) == 1) {
-            if (coefficient.numerator == -1) {
-                res.append("<mo>-</mo>");
-            }
-        } else {
-            res.append(coefficient.numerator.to_html());
-        }
-        if (coefficient.denominator != 1) {
-            denominator.append(coefficient.denominator.to_html());
+        if (coefficient == -1) {
+            res.append("<mo>-</mo>");
+        } else if (std::abs(coefficient) != 1) {
+            res.append(detail::HTML(coefficient).to_html());
         }
         for (const auto& [name, exponent] : variables) {
             std::string var;
@@ -260,7 +248,7 @@ public:
                 var.insert(0, "<msub>").append("<mn>").append(name.substr(1)).append("</mn></msub>");
             }
             if (std::abs(exponent) != 1) {
-                var.insert(0, "<msup>").append(exponent.to_html()).append("</msup>");
+                var.insert(0, "<msup>").append(detail::HTML(exponent).to_html()).append("</msup>");
             }
             (exponent < 0 ? denominator : res).append(var);
         }
@@ -270,14 +258,14 @@ public:
         return res;
     }
 
-    constexpr explicit operator Fraction() const {
-        assert(is_fraction());
+    constexpr explicit operator double() const {
+        assert(is_number());
         return coefficient;
     }
 
     void serialize(std::ofstream& out) const {
         out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
-        coefficient.serialize(out);
+        out.write(reinterpret_cast<const char*>(&coefficient), sizeof(coefficient));
         size_t size = variables.size();
         out.write(reinterpret_cast<const char*>(&size), sizeof(size));
 
@@ -285,7 +273,7 @@ public:
             size = name.size();
             out.write(reinterpret_cast<const char*>(&size), sizeof(size));
             out.write(name.c_str(), size);
-            exponent.serialize(out);
+            out.write(reinterpret_cast<const char*>(&exponent), sizeof(exponent));
         }
     }
 
@@ -296,7 +284,7 @@ public:
 
         Variable res;
         size_t size;
-        res.coefficient = Fraction::deserialize(in);
+        in.read(reinterpret_cast<char*>(&res.coefficient), sizeof(res.coefficient));
         in.read(reinterpret_cast<char*>(&size), sizeof(size));
         res.variables.resize(size);
 
@@ -306,17 +294,15 @@ public:
             std::string name(len, '\0');
             in.read(&name[0], len);
             res.variables[i].name = name;
-            res.variables[i].exponent = Fraction::deserialize(in);
+            in.read(reinterpret_cast<char*>(&res.variables[i].exponent), sizeof(res.variables[i].exponent));
         }
         return res;
     }
 };
 
-constexpr algebra::Variable operator*(const algebra::Fraction& value, const algebra::Variable& variable) { return variable * value; }
+constexpr algebra::Variable operator*(const double value, const algebra::Variable& variable) { return variable * value; }
 
-constexpr algebra::Variable operator/(const algebra::Fraction& value, const algebra::Variable& variable) {
-    return algebra::Variable(value) / variable;
-}
+constexpr algebra::Variable operator/(const double value, const algebra::Variable& variable) { return algebra::Variable(value) / variable; }
 
 namespace std {
     inline algebra::Variable abs(algebra::Variable variable) {
@@ -326,27 +312,21 @@ namespace std {
 
     inline string to_string(const algebra::Variable& variable) {
         if (variable.variables.empty()) {
-            return to_string(variable.coefficient);
+            return format(algebra::detail::FORMAT, variable.coefficient);
         }
         if (variable.coefficient == 0) {
             return "0";
         }
         string res, denominator;
         const bool fractional = std::ranges::find_if(
-                                    variable.variables, [](const algebra::Fraction& exponent) -> bool { return exponent < 0; },
-                                    &algebra::Variable::Var::exponent) != variable.variables.end() ||
-            variable.coefficient.denominator != 1;
+                                    variable.variables, [](const double exponent) -> bool { return exponent < 0; },
+                                    &algebra::Variable::Var::exponent) != variable.variables.end();
         const int size = variable.variables.size();
 
-        if (std::abs(variable.coefficient.numerator) == 1) {
-            if (variable.coefficient.numerator == -1) {
-                res.push_back('-');
-            }
-        } else {
-            res.append(std::to_string(variable.coefficient.numerator));
-        }
-        if (variable.coefficient.denominator != 1) {
-            denominator.append(std::to_string(variable.coefficient.denominator));
+        if (variable.coefficient == -1) {
+            res.push_back('-');
+        } else if (std::abs(variable.coefficient) != 1) {
+            res.append(format(algebra::detail::FORMAT, variable.coefficient));
         }
         for (const auto& [name, exponent] : variable.variables) {
             if (abs(exponent) != 1 && size > 1) {
@@ -355,16 +335,7 @@ namespace std {
             (exponent < 0 ? denominator : res).append(name);
 
             if (abs(exponent) != 1) {
-                (exponent < 0 ? denominator : res).push_back('^');
-
-                if (exponent.denominator != 1) {
-                    (exponent < 0 ? denominator : res).push_back('(');
-                }
-                (exponent < 0 ? denominator : res).append(std::to_string(exponent));
-
-                if (exponent.denominator != 1) {
-                    (exponent < 0 ? denominator : res).push_back(')');
-                }
+                (exponent < 0 ? denominator : res).append("^").append(format(algebra::detail::FORMAT, exponent));
             }
             if (abs(exponent) != 1 && size > 1) {
                 (exponent < 0 ? denominator : res).push_back(')');

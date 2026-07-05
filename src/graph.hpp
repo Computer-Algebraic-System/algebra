@@ -4,16 +4,18 @@ class algebra::Point {
     static constexpr auto serial_class = detail::SerialClass::POINT;
 
 public:
-    Fraction x, y;
+    double x, y;
 
-    std::strong_ordering operator<=>(const Point&) const = default;
+    std::partial_ordering operator<=>(const Point&) const = default;
 
-    std::string to_latex() const { return std::string("\\left(").append(x.to_latex()).append(",").append(y.to_latex()).append("\\right)"); }
+    std::string to_latex() const {
+        return std::string("\\left(").append(detail::LaTeX(x).to_latex()).append(",").append(detail::LaTeX(y).to_latex()).append("\\right)");
+    }
 
     void serialize(std::ofstream& out) const {
         out.write(reinterpret_cast<const char*>(&serial_class), sizeof(serial_class));
-        x.serialize(out);
-        y.serialize(out);
+        out.write(reinterpret_cast<const char*>(&x), sizeof(x));
+        out.write(reinterpret_cast<const char*>(&y), sizeof(y));
     }
 
     static Point deserialize(std::ifstream& in) {
@@ -22,8 +24,8 @@ public:
         assert(type == serial_class);
 
         Point res;
-        res.x = Fraction::deserialize(in);
-        res.y = Fraction::deserialize(in);
+        in.read(reinterpret_cast<char*>(&res.x), sizeof(res.x));
+        in.read(reinterpret_cast<char*>(&res.y), sizeof(res.y));
         return res;
     }
 };
@@ -57,31 +59,31 @@ class algebra::Graph {
     }
 
 public:
-    static int plot(const std::vector<Inequation>& inequations, const std::vector<Point>& points = {}, const Fraction& limit = 10,
+    static int plot(const std::vector<Inequation>& inequations, const std::vector<Point>& points = {}, const double limit = 10,
                     const std::string& file_name = "graph.png") {
-        const Fraction increment = limit / 100;
+        const double increment = limit / 100;
         std::vector<double> x_vals;
         std::vector<std::pair<std::vector<double>, std::string>> y_curves;
         std::vector<std::pair<double, std::string>> vertical_lines;
         std::vector<std::pair<std::string, std::string>> pt_list;
-        std::map<Variable, Fraction> substituent{{Variable("x"), Fraction(0)}};
+        std::map<Variable, double> substituent{{Variable("x"), double(0)}};
 
         for (const auto& inequation : inequations) {
             if (std::ranges::contains(std::array{inequation.lhs.terms, inequation.rhs.terms} | std::views::join, Variable("y"), &Variable::basis)) {
                 const SimplePolynomial simplified = inequation.solve_for(Variable("y")).rhs;
                 std::vector<double> y_vals;
 
-                for (Fraction i = 0; i < limit; i += increment) {
+                for (double i = 0; i < limit; i += increment) {
                     substituent.begin()->second = i;
-                    y_vals.push_back(static_cast<double>(static_cast<Fraction>(simplified.substitute(substituent, false))));
+                    y_vals.push_back(static_cast<double>(static_cast<double>(simplified.substitute(substituent, false))));
                 }
                 y_curves.emplace_back(std::move(y_vals), std::to_string(inequation));
             } else {
-                vertical_lines.emplace_back(static_cast<double>(static_cast<Fraction>(inequation.solve_for(Variable("x")).rhs)),
+                vertical_lines.emplace_back(static_cast<double>(static_cast<double>(inequation.solve_for(Variable("x")).rhs)),
                                             std::to_string(inequation));
             }
         }
-        for (Fraction i = 0; i < limit; i += increment) {
+        for (double i = 0; i < limit; i += increment) {
             x_vals.push_back(static_cast<double>(i));
         }
         for (const auto& [px, py] : points) {
@@ -97,10 +99,16 @@ public:
             break;
 
         case detail::FormatSettings::Output::HTML:
-            str.append("<div style='text-align: center'><img src='")
-                .append(file_name)
-                .append("' style='width: 30%; height: auto;'></div>\n");
+            str.append("<div style='text-align: center'><img src='").append(file_name).append("' style='width: 30%; height: auto;'></div>\n");
             GLOBAL_FORMATTING << str;
+            break;
+
+        case detail::FormatSettings::Output::MANIM:
+            GLOBAL_FORMATTING.file << std::string("\t\tcurrent = ImageMobject('")
+                                          .append(file_name)
+                                          .append("').scale_to_fit_width(config.frame_width * 0.6).next_to(prev, DOWN, "
+                                                  "buff=0.5).set_x(self.camera.frame.get_center()[0])\n\t\tself.play(self.camera.frame.animate.move_"
+                                                  "to(current))\n\t\tself.play(FadeIn(current.scale(0.5)))\n\t\tprev = current\n\n");
             break;
 
         default:

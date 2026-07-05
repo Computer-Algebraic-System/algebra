@@ -1,11 +1,15 @@
 #pragma once
 
 namespace algebra {
+    static constexpr double inf = std::numeric_limits<double>::infinity();
+
     namespace detail {
         class LaTeX {
-            const std::string& latex;
+            const std::string latex;
 
         public:
+            LaTeX(const double value) : latex(std::format(FORMAT, value)) {}
+
             LaTeX(const std::string& latex) : latex(latex) {}
 
             const std::string& to_latex() const { return latex; }
@@ -14,9 +18,11 @@ namespace algebra {
         inline std::ostream& operator<<(std::ostream& out, const LaTeX& latex) { return out << latex.to_latex(); }
 
         class HTML {
-            const std::string& html;
+            const std::string html;
 
         public:
+            HTML(const double value) : html("<mn>" + std::format(FORMAT, value).append("</mn>")) {}
+
             HTML(const std::string& html) : html(html) {}
 
             const std::string& to_html() const { return html; }
@@ -60,7 +66,10 @@ namespace algebra {
                 this->interpreter_path = interpreter_path + "/bin/activate";
                 filename = name + ".py";
                 file.open(filename);
-                file << "from manim import *\n\nclass Output(MovingCameraScene):\n\tdef construct(self):\n\t\tprev = VectorizedPoint(ORIGIN)\n";
+                file << "from manim import *\n\nmy_template = TexTemplate()\nmy_template.add_to_preamble(r'''\\usepackage[fontsize=8.5pt]{fontsize}\n"
+                        "\\usepackage[top=0.5in, bottom=1in, left=0.5in, right=0.5in]{geometry}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n"
+                        "\\renewcommand{\\arraystretch}{1.5}''')\nconfig.tex_template = my_template\n\nclass Output(MovingCameraScene):\n"
+                        "\tdef construct(self):\n\t\tprev = VectorizedPoint(ORIGIN)\n";
             }
 
             template <typename T>
@@ -99,13 +108,14 @@ namespace algebra {
                         fmt.file << "\t\tcurrent = ";
 
                         if constexpr (requires(const T& obj) { obj.to_latex(); }) {
-                            fmt.file << "MathTex(r'''" << object.to_latex();
+                            fmt.file << "MathTex(r'''" << object.to_latex()
+                                     << "''').scale(0.5).next_to(prev, DOWN, buff=0.5).set_x(self.camera.frame.get_center()[0])\n"
+                                     << "\t\tself.play(self.camera.frame.animate.move_to(current))\n";
                         } else {
-                            fmt.file << "Text(r'''" << object;
+                            fmt.file << "Text(r'''" << object
+                                     << "''').scale(0.3).next_to(prev, DOWN, buff=0.5).align_to(self.camera.frame, LEFT).shift(RIGHT * 0.5)\n";
                         }
-                        fmt.file << "''').next_to(prev, DOWN, buff=0.5)\n"
-                                    "\t\tself.play(self.camera.frame.animate.move_to(current))\n"
-                                    "\t\tself.play(Write(current.scale(0.5)))\n\t\tprev = current\n\n";
+                        fmt.file << "\t\tself.play(Write(current))\n\t\tprev = current\n\n";
                     }
                 }
                 return fmt;
@@ -206,9 +216,9 @@ namespace algebra {
                             old_path.append("2160p60");
                             break;
                         }
-                        system(command.append(filename).append(" --disable_caching Output && rm -f ").append(filename).c_str());
+                        system(command.append(filename).append(" --disable_caching Output").c_str());
                         std::filesystem::rename(old_path.append("/Output.mp4"), "outputs/" + filename.substr(0, filename.size() - 3) + ".mp4");
-                        system("rm -rf media");
+                        system(std::string("rm -rf media ").append(filename).c_str());
                     }
                     break;
 
@@ -309,17 +319,18 @@ namespace algebra {
 
     namespace detail {
         template <typename T, typename U, typename V>
-        void print_substitute(const T& initial, const std::map<U, Fraction>& values, const V& final) {
+        void print_substitute(const T& initial, const std::map<U, double>& values, const V& final) {
             if (!values.empty()) {
                 std::string str;
 
                 switch (GLOBAL_FORMATTING.output) {
                 case FormatSettings::Output::LATEX:
+                case FormatSettings::Output::MANIM:
                     str = "\\left.";
                     str.append(initial.to_latex()).append("\\right|_{");
 
-                    for (const auto& [variable, fraction] : values) {
-                        str.append(variable.to_latex()).append("=").append(fraction.to_latex()).push_back(',');
+                    for (const auto& [variable, value] : values) {
+                        str.append(variable.to_latex()).append("=").append(LaTeX(value).to_latex()).push_back(',');
                     }
                     str.pop_back();
                     GLOBAL_FORMATTING << LaTeX(str.append("}=").append(final.to_latex()));
@@ -331,10 +342,10 @@ namespace algebra {
                         .append("<msub><mo>|</mo><mrow>")
                         .append(values.begin()->first.to_html())
                         .append("<mo>=</mo>")
-                        .append(values.begin()->second.to_html());
+                        .append(HTML(values.begin()->second).to_html());
 
-                    for (const auto& [variable, fraction] : values | std::views::drop(1)) {
-                        str.append("<mo>,</mo><mspace width='5px'/>").append(variable.to_html()).append("<mo>=</mo>").append(fraction.to_html());
+                    for (const auto& [variable, value] : values | std::views::drop(1)) {
+                        str.append("<mo>,</mo><mspace width='5px'/>").append(variable.to_html()).append("<mo>=</mo>").append(HTML(value).to_html());
                     }
                     GLOBAL_FORMATTING << HTML(str.append("</mrow></msub><mo>=</mo>").append(final.to_html()));
                     break;
@@ -355,6 +366,7 @@ namespace algebra {
         void print_differentiate(const T& initial, const U& wrt, const V& final) {
             switch (GLOBAL_FORMATTING.output) {
             case FormatSettings::Output::LATEX:
+            case FormatSettings::Output::MANIM:
                 GLOBAL_FORMATTING << LaTeX(
                     std::string("\\dfrac{d}{d").append(wrt.to_latex()).append("}").append(initial.to_latex()).append("=").append(final.to_latex()));
                 break;
@@ -378,10 +390,11 @@ namespace algebra {
         void print_integrate(const T& initial, const U& a, const U& b, const V& wrt, const W& final) {
             switch (GLOBAL_FORMATTING.output) {
             case FormatSettings::Output::LATEX:
+            case FormatSettings::Output::MANIM:
                 GLOBAL_FORMATTING << LaTeX(std::string("\\int_{")
-                                               .append(a.to_latex())
+                                               .append(LaTeX(a).to_latex())
                                                .append("}^{")
-                                               .append(b.to_latex())
+                                               .append(LaTeX(b).to_latex())
                                                .append("}")
                                                .append(initial.to_latex())
                                                .append("d")
@@ -392,8 +405,8 @@ namespace algebra {
 
             case FormatSettings::Output::HTML:
                 GLOBAL_FORMATTING << HTML(std::string("<msubsup><mo>&int;</mo>")
-                                              .append(a.to_html())
-                                              .append(b.to_html())
+                                              .append(HTML(a).to_html())
+                                              .append(HTML(b).to_html())
                                               .append("</msubsup>")
                                               .append(initial.to_html())
                                               .append("<mspace width='5px'/><mi>d</mi>")

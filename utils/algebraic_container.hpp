@@ -13,8 +13,7 @@ class algebra::detail::AlgebraicContainer {
             denominator.terms.emplace_back(1);
             return;
         }
-        Fraction coefficient_gcd = denominator.terms.front().coefficient;
-        std::map<std::string, Fraction> value_gcd;
+        std::map<std::string, double> value_gcd;
         T factor(1);
 
         for (const T& value : numerator.terms) {
@@ -26,13 +25,13 @@ class algebra::detail::AlgebraicContainer {
         }
         numerator *= factor;
         denominator *= factor;
+        factor = 1;
 
         for (const auto& [name, exponent] : denominator.terms.front().variables) {
             value_gcd.emplace(name, exponent);
         }
-        for (const T& value : std::array{numerator.terms, denominator.terms} | std::views::join) {
-            coefficient_gcd = std::gcd(coefficient_gcd, value.coefficient);
 
+        for (const T& value : std::array{numerator.terms, denominator.terms} | std::views::join) {
             for (auto& [name, exponent] : value_gcd) {
                 const auto itr = std::ranges::find(value.variables, name, &Variable::Var::name);
 
@@ -43,10 +42,10 @@ class algebra::detail::AlgebraicContainer {
                 }
             }
         }
-        factor = coefficient_gcd;
-
         for (const auto& [name, exponent] : value_gcd) {
-            factor *= T(name) ^ exponent;
+            if (exponent != 0) {
+                factor *= T(name) ^ exponent;
+            }
         }
         for (T& value : numerator.terms) {
             value /= factor;
@@ -61,8 +60,8 @@ public:
 
     AlgebraicContainer() : numerator(), denominator(1) {}
 
-    AlgebraicContainer(const Fraction& value) : numerator(value), denominator(1) {
-        if (!value.is_infinity()) {
+    AlgebraicContainer(const double value) : numerator(value), denominator(1) {
+        if (value != inf) {
             simplify();
         }
     }
@@ -80,9 +79,9 @@ public:
         return res;
     }
 
-    AlgebraicContainer& operator+=(const Fraction& value) { return *this += AlgebraicContainer(value); }
+    AlgebraicContainer& operator+=(const double value) { return *this += AlgebraicContainer(value); }
 
-    AlgebraicContainer operator+(const Fraction& value) const { return *this + AlgebraicContainer(value); }
+    AlgebraicContainer operator+(const double value) const { return *this + AlgebraicContainer(value); }
 
     AlgebraicContainer& operator+=(const T& value) { return *this += AlgebraicContainer(value); }
 
@@ -94,9 +93,9 @@ public:
         return AlgebraicContainer(numerator * value.denominator + denominator * value.numerator, denominator * value.denominator);
     }
 
-    AlgebraicContainer& operator-=(const Fraction& value) { return *this += -value; }
+    AlgebraicContainer& operator-=(const double value) { return *this += -value; }
 
-    AlgebraicContainer operator-(const Fraction& value) const { return *this + -value; }
+    AlgebraicContainer operator-(const double value) const { return *this + -value; }
 
     AlgebraicContainer& operator-=(const T& value) { return *this += -value; }
 
@@ -106,9 +105,9 @@ public:
 
     AlgebraicContainer operator-(const AlgebraicContainer& value) const { return *this + -value; }
 
-    AlgebraicContainer& operator*=(const Fraction& value) { return *this *= AlgebraicContainer(value); }
+    AlgebraicContainer& operator*=(const double value) { return *this *= AlgebraicContainer(value); }
 
-    AlgebraicContainer operator*(const Fraction& value) const { return *this * AlgebraicContainer(value); }
+    AlgebraicContainer operator*(const double value) const { return *this * AlgebraicContainer(value); }
 
     AlgebraicContainer& operator*=(const T& value) { return *this *= AlgebraicContainer(value); }
 
@@ -120,9 +119,9 @@ public:
         return AlgebraicContainer(numerator * value.numerator, denominator * value.denominator);
     }
 
-    AlgebraicContainer& operator/=(const Fraction& value) { return *this /= AlgebraicContainer(value); }
+    AlgebraicContainer& operator/=(const double value) { return *this /= AlgebraicContainer(value); }
 
-    AlgebraicContainer operator/(const Fraction& value) const { return *this / AlgebraicContainer(value); }
+    AlgebraicContainer operator/(const double value) const { return *this / AlgebraicContainer(value); }
 
     AlgebraicContainer& operator/=(const T& value) { return *this /= AlgebraicContainer(value); }
 
@@ -134,7 +133,7 @@ public:
         return AlgebraicContainer(numerator * value.denominator, denominator * value.numerator);
     }
 
-    AlgebraicContainer substitute(const std::map<T, Fraction>& values, const bool origin = true) const {
+    AlgebraicContainer substitute(const std::map<T, double>& values, const bool origin = true) const {
         AlgebraicContainer res(numerator.substitute(values, false), denominator.substitute(values, false));
 
         if (origin && GLOBAL_FORMATTING.verbose) {
@@ -153,12 +152,12 @@ public:
         return res;
     }
 
-    AlgebraicContainer integrate(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
+    AlgebraicContainer integrate(const Variable& wrt, const double a, const double b, const bool origin = true) const {
         assert(wrt.variables.size() == 1);
-        static auto tol = Fraction(10) ^ -9;
+        static auto tol = std::pow(10, -9);
         int n = 2;
         AlgebraicContainer current, prev;
-        std::map<Variable, Fraction> substituent{{wrt, a}}, sub;
+        std::map<Variable, double> substituent{{wrt, a}}, sub;
 
         for (const Variable& variable : std::array{numerator, denominator} | std::views::join) {
             for (const auto& [name, exponent] : variable.variables) {
@@ -166,7 +165,7 @@ public:
             }
         }
         do {
-            const Fraction h = (b - a) / n;
+            const double h = (b - a) / n;
             prev = current;
             substituent.begin()->second = a;
             current = substitute(substituent, false);
@@ -179,14 +178,14 @@ public:
             current += substitute(substituent, false);
             current *= h / 3;
             n <<= 1;
-        } while (std::abs(static_cast<Fraction>(current.substitute(sub, false)) - static_cast<Fraction>(prev.substitute(sub, false))) > tol);
+        } while (std::abs(static_cast<double>(current.substitute(sub, false)) - static_cast<double>(prev.substitute(sub, false))) > tol);
         if (origin && GLOBAL_FORMATTING.verbose) {
             detail::print_integrate(*this, a, b, wrt, current);
         }
         return current;
     }
 
-    bool is_numerator() const { return denominator.is_fraction() and static_cast<Fraction>(denominator) == 1; }
+    bool is_numerator() const { return denominator.is_fraction(); }
 
     bool is_value() const { return is_numerator() && numerator.is_value(); }
 
@@ -198,15 +197,15 @@ public:
         }
         std::string res;
 
-        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+        if (!denominator.is_fraction() || static_cast<double>(denominator) != 1) {
             res.append("\\dfrac{");
         }
         res.append(numerator.to_latex());
 
-        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+        if (!denominator.is_fraction() || static_cast<double>(denominator) != 1) {
             res.append("}{");
         }
-        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+        if (!denominator.is_fraction() || static_cast<double>(denominator) != 1) {
             res.append(denominator.to_latex()).push_back('}');
         }
         return res;
@@ -218,32 +217,32 @@ public:
         }
         std::string res;
 
-        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+        if (!denominator.is_fraction() || static_cast<double>(denominator) != 1) {
             res.append("<mfrac><mrow>");
         }
         res.append(numerator.to_html());
 
-        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+        if (!denominator.is_fraction() || static_cast<double>(denominator) != 1) {
             res.append("</mrow><mrow>");
         }
-        if (!denominator.is_fraction() || static_cast<Fraction>(denominator) != 1) {
+        if (!denominator.is_fraction() || static_cast<double>(denominator) != 1) {
             res.append(denominator.to_html()).append("</mrow></mfrac>");
         }
         return res;
     }
 
-    explicit operator Fraction() const {
+    explicit operator double() const {
         assert(is_fraction());
 
         if (numerator.terms.empty()) {
             return 0;
         }
-        return static_cast<Fraction>(static_cast<T>(numerator));
+        return static_cast<double>(static_cast<T>(numerator)) / static_cast<double>(static_cast<T>(denominator));
     }
 
     explicit operator T() const {
         assert(is_value());
-        return numerator.terms.front();
+        return numerator.terms.front() / static_cast<double>(static_cast<T>(denominator));
     }
 
     void serialize(std::ofstream& out) const {
@@ -265,7 +264,7 @@ public:
 };
 
 template <typename T>
-algebra::detail::AlgebraicContainer<T> operator+(const algebra::Fraction& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
+algebra::detail::AlgebraicContainer<T> operator+(const double lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return rhs + lhs;
 }
 template <typename T>
@@ -274,7 +273,7 @@ algebra::detail::AlgebraicContainer<T> operator+(const T& lhs, const algebra::de
 }
 
 template <typename T>
-algebra::detail::AlgebraicContainer<T> operator-(const algebra::Fraction& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
+algebra::detail::AlgebraicContainer<T> operator-(const double lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return -rhs + lhs;
 }
 template <typename T>
@@ -283,7 +282,7 @@ algebra::detail::AlgebraicContainer<T> operator-(const T& lhs, const algebra::de
 }
 
 template <typename T>
-algebra::detail::AlgebraicContainer<T> operator*(const algebra::Fraction& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
+algebra::detail::AlgebraicContainer<T> operator*(const double lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return rhs * lhs;
 }
 template <typename T>
@@ -292,7 +291,7 @@ algebra::detail::AlgebraicContainer<T> operator*(const T& lhs, const algebra::de
 }
 
 template <typename T>
-algebra::detail::AlgebraicContainer<T> operator/(const algebra::Fraction& lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
+algebra::detail::AlgebraicContainer<T> operator/(const double lhs, const algebra::detail::AlgebraicContainer<T>& rhs) {
     return algebra::detail::AlgebraicContainer<T>(lhs) / rhs;
 }
 template <typename T>
@@ -315,17 +314,17 @@ namespace std {
         string res;
 
         if (algebraic_container.numerator.terms.size() > 1 &&
-            (!algebraic_container.denominator.is_fraction() || static_cast<algebra::Fraction>(algebraic_container.denominator) != 1)) {
+            (!algebraic_container.denominator.is_fraction() || static_cast<double>(algebraic_container.denominator) != 1)) {
             res.push_back('(');
         }
         res.append(to_string(algebraic_container.numerator));
 
         if (algebraic_container.numerator.terms.size() > 1 &&
-            (!algebraic_container.denominator.is_fraction() || static_cast<algebra::Fraction>(algebraic_container.denominator) != 1)) {
+            (!algebraic_container.denominator.is_fraction() || static_cast<double>(algebraic_container.denominator) != 1)) {
             res.push_back(')');
         }
 
-        if (!algebraic_container.denominator.is_fraction() || static_cast<algebra::Fraction>(algebraic_container.denominator) != 1) {
+        if (!algebraic_container.denominator.is_fraction() || static_cast<double>(algebraic_container.denominator) != 1) {
             res.push_back('/');
 
             if (algebraic_container.denominator.terms.size() > 1) {

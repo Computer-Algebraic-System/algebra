@@ -10,7 +10,7 @@ public:
 
     constexpr AlgebraicExpression() = default;
 
-    AlgebraicExpression(const Fraction& fraction) : AlgebraicExpression(T(fraction)) {}
+    AlgebraicExpression(const double value) : AlgebraicExpression(T(value)) {}
 
     AlgebraicExpression(const T& value) : terms(1, value) {}
 
@@ -23,9 +23,9 @@ public:
         return res;
     }
 
-    AlgebraicExpression& operator+=(const Fraction& value) { return *this += AlgebraicExpression(value); }
+    AlgebraicExpression& operator+=(const double value) { return *this += AlgebraicExpression(value); }
 
-    AlgebraicExpression operator+(const Fraction& value) const { return *this + AlgebraicExpression(value); }
+    AlgebraicExpression operator+(const double value) const { return *this + AlgebraicExpression(value); }
 
     AlgebraicExpression& operator+=(const T& value) { return *this += AlgebraicExpression(value); }
 
@@ -34,7 +34,7 @@ public:
     AlgebraicExpression& operator+=(const AlgebraicExpression& other) {
         for (const T& value : other.terms) {
             const auto itr = std::ranges::lower_bound(terms, value, [](const T& lhs, const T& rhs) -> bool {
-                const bool lhs_const = lhs.is_fraction(), rhs_const = rhs.is_fraction();
+                const bool lhs_const = lhs.is_number(), rhs_const = rhs.is_number();
 
                 if (lhs_const != rhs_const) {
                     return !lhs_const;
@@ -57,9 +57,9 @@ public:
 
     AlgebraicExpression operator+(const AlgebraicExpression& value) const { return AlgebraicExpression(*this) += value; }
 
-    AlgebraicExpression& operator-=(const Fraction& value) { return *this += -value; }
+    AlgebraicExpression& operator-=(const double value) { return *this += -value; }
 
-    AlgebraicExpression operator-(const Fraction& value) const { return *this + -value; }
+    AlgebraicExpression operator-(const double value) const { return *this + -value; }
 
     AlgebraicExpression& operator-=(const T& value) { return *this += -value; }
 
@@ -69,9 +69,9 @@ public:
 
     AlgebraicExpression operator-(const AlgebraicExpression& value) const { return *this + -value; }
 
-    AlgebraicExpression& operator*=(const Fraction& value) { return *this *= AlgebraicExpression(value); }
+    AlgebraicExpression& operator*=(const double value) { return *this *= AlgebraicExpression(value); }
 
-    AlgebraicExpression operator*(const Fraction& value) const { return *this * AlgebraicExpression(value); }
+    AlgebraicExpression operator*(const double value) const { return *this * AlgebraicExpression(value); }
 
     AlgebraicExpression& operator*=(const T& value) { return *this *= AlgebraicExpression(value); }
 
@@ -90,9 +90,9 @@ public:
         return res;
     }
 
-    AlgebraicExpression& operator/=(const Fraction& value) { return *this /= T(value); }
+    AlgebraicExpression& operator/=(const double value) { return *this /= T(value); }
 
-    AlgebraicExpression operator/(const Fraction& value) const { return *this / T(value); }
+    AlgebraicExpression operator/(const double value) const { return *this / T(value); }
 
     AlgebraicExpression& operator/=(const T& value) {
         for (T& element : terms) {
@@ -103,9 +103,9 @@ public:
 
     AlgebraicExpression operator/(const T& value) const { return AlgebraicExpression(*this) /= value; }
 
-    std::map<T, Fraction> roots() const;
+    std::map<T, double> roots() const;
 
-    AlgebraicExpression substitute(const std::map<T, Fraction>& values, const bool origin = true) const {
+    AlgebraicExpression substitute(const std::map<T, double>& values, const bool origin = true) const {
         AlgebraicExpression res;
 
         for (const T& value : terms) {
@@ -129,7 +129,7 @@ public:
         return res;
     }
 
-    AlgebraicExpression integrate(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
+    AlgebraicExpression integrate(const Variable& wrt, const double a, const double b, const bool origin = true) const {
         AlgebraicExpression res;
 
         for (const T& value : terms) {
@@ -143,7 +143,7 @@ public:
 
     bool is_value() const { return terms.size() == 1; }
 
-    bool is_fraction() const { return terms.empty() || is_value() && terms.front().is_fraction(); }
+    bool is_fraction() const { return terms.empty() || is_value() && terms.front().is_number(); }
 
     std::string to_latex() const {
         std::string res;
@@ -173,13 +173,13 @@ public:
         return "<mn>0</mn>";
     }
 
-    explicit operator Fraction() const {
+    explicit operator double() const {
         assert(is_fraction());
 
         if (terms.empty()) {
             return 0;
         }
-        return static_cast<Fraction>(static_cast<T>(*this));
+        return static_cast<double>(static_cast<T>(*this));
     }
 
     explicit operator T() const {
@@ -219,11 +219,11 @@ algebra::detail::AlgebraicExpression<T> operator+(const T& lhs, const T& rhs) {
     return algebra::detail::AlgebraicExpression(lhs) + rhs;
 }
 template <typename T>
-algebra::detail::AlgebraicExpression<T> operator+(const T& lhs, const algebra::Fraction& rhs) {
+algebra::detail::AlgebraicExpression<T> operator+(const T& lhs, const double rhs) {
     return algebra::detail::AlgebraicExpression(lhs) + rhs;
 }
 template <typename T>
-algebra::detail::AlgebraicExpression<T> operator+(const algebra::Fraction& lhs, const T& rhs) {
+algebra::detail::AlgebraicExpression<T> operator+(const double lhs, const T& rhs) {
     return rhs + lhs;
 }
 template <typename T>
@@ -231,15 +231,15 @@ algebra::detail::AlgebraicExpression<T> operator-(const T& lhs, const T& rhs) {
     return -rhs + lhs;
 }
 template <typename T>
-algebra::detail::AlgebraicExpression<T> operator-(const T& lhs, const algebra::Fraction& rhs) {
+algebra::detail::AlgebraicExpression<T> operator-(const T& lhs, const double rhs) {
     return -rhs + lhs;
 }
 template <typename T>
-algebra::detail::AlgebraicExpression<T> operator-(const algebra::Fraction& lhs, const T& rhs) {
+algebra::detail::AlgebraicExpression<T> operator-(const double lhs, const T& rhs) {
     return -rhs + lhs;
 }
 template <typename T>
-algebra::detail::AlgebraicExpression<T> operator+(const algebra::Fraction& lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
+algebra::detail::AlgebraicExpression<T> operator+(const double lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
     return rhs + lhs;
 }
 template <typename T>
@@ -247,7 +247,7 @@ algebra::detail::AlgebraicExpression<T> operator-(const T& lhs, const algebra::d
     return -rhs + lhs;
 }
 template <typename T>
-algebra::detail::AlgebraicExpression<T> operator*(const algebra::Fraction& lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
+algebra::detail::AlgebraicExpression<T> operator*(const double lhs, const algebra::detail::AlgebraicExpression<T>& rhs) {
     return rhs * lhs;
 }
 template <typename T>

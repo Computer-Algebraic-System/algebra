@@ -15,9 +15,9 @@ public:
     Interval(const Inequation& lhs, const RelationalOperator opr, const SimplePolynomial& rhs) :
         lhs(lhs.lhs), mid(lhs.rhs), rhs(rhs), opr1(lhs.opr), opr2(opr) {}
 
-    Interval& operator+=(const Fraction& value) { return *this += SimplePolynomial(value); }
+    Interval& operator+=(const double value) { return *this += SimplePolynomial(value); }
 
-    Interval operator+(const Fraction& value) const { return *this + SimplePolynomial(value); }
+    Interval operator+(const double value) const { return *this + SimplePolynomial(value); }
 
     Interval& operator+=(const Variable& value) { return *this += SimplePolynomial(value); }
 
@@ -27,9 +27,9 @@ public:
 
     Interval operator+(const SimplePolynomial& value) const { return Interval(lhs + value, opr1, mid + value, opr2, rhs + value); }
 
-    Interval& operator-=(const Fraction& value) { return *this += -value; }
+    Interval& operator-=(const double value) { return *this += -value; }
 
-    Interval operator-(const Fraction& value) const { return *this + -value; }
+    Interval operator-(const double value) const { return *this + -value; }
 
     Interval& operator-=(const Variable& value) { return *this += -value; }
 
@@ -39,9 +39,9 @@ public:
 
     Interval operator-(const SimplePolynomial& value) const { return *this + -value; }
 
-    Interval& operator*=(const Fraction& value) { return *this *= SimplePolynomial(value); }
+    Interval& operator*=(const double value) { return *this *= SimplePolynomial(value); }
 
-    Interval operator*(const Fraction& value) const { return *this * SimplePolynomial(value); }
+    Interval operator*(const double value) const { return *this * SimplePolynomial(value); }
 
     Interval& operator*=(const Variable& value) { return *this *= SimplePolynomial(value); }
 
@@ -51,9 +51,9 @@ public:
 
     Interval operator*(const SimplePolynomial& value) const { return Interval(lhs * value, opr1, mid * value, opr2, rhs * value); }
 
-    Interval& operator/=(const Fraction& value) { return *this /= Variable(value); }
+    Interval& operator/=(const double value) { return *this /= Variable(value); }
 
-    Interval operator/(const Fraction& value) const { return *this / Variable(value); }
+    Interval operator/(const double value) const { return *this / Variable(value); }
 
     Interval& operator/=(const Variable& value) { return *this = *this / value; }
 
@@ -68,7 +68,7 @@ public:
         return res;
     }
 
-    Interval integral(const Variable& wrt, const Fraction& a, const Fraction& b, const bool origin = true) const {
+    Interval integral(const Variable& wrt, const double a, const double b, const bool origin = true) const {
         Interval res(lhs.integrate(wrt, a, b), opr1, mid.integrate(wrt, a, b), opr2, rhs.integrate(wrt, a, b));
 
         if (origin && GLOBAL_FORMATTING.verbose) {
@@ -135,25 +135,25 @@ inline algebra::Interval operator>=(const algebra::SimplePolynomial& lhs, const 
 
 inline algebra::Interval operator==(const algebra::SimplePolynomial& lhs, const algebra::Inequation& rhs) { return rhs == lhs; }
 
-inline algebra::Interval operator<(const algebra::Inequation& lhs, const algebra::Fraction& rhs) { return lhs < algebra::SimplePolynomial(rhs); }
+inline algebra::Interval operator<(const algebra::Inequation& lhs, const double rhs) { return lhs < algebra::SimplePolynomial(rhs); }
 
-inline algebra::Interval operator<=(const algebra::Inequation& lhs, const algebra::Fraction& rhs) { return lhs <= algebra::SimplePolynomial(rhs); }
+inline algebra::Interval operator<=(const algebra::Inequation& lhs, const double rhs) { return lhs <= algebra::SimplePolynomial(rhs); }
 
-inline algebra::Interval operator>(const algebra::Inequation& lhs, const algebra::Fraction& rhs) { return lhs > algebra::SimplePolynomial(rhs); }
+inline algebra::Interval operator>(const algebra::Inequation& lhs, const double rhs) { return lhs > algebra::SimplePolynomial(rhs); }
 
-inline algebra::Interval operator>=(const algebra::Inequation& lhs, const algebra::Fraction& rhs) { return lhs >= algebra::SimplePolynomial(rhs); }
+inline algebra::Interval operator>=(const algebra::Inequation& lhs, const double rhs) { return lhs >= algebra::SimplePolynomial(rhs); }
 
-inline algebra::Interval operator==(const algebra::Inequation& lhs, const algebra::Fraction& rhs) { return lhs == algebra::SimplePolynomial(rhs); }
+inline algebra::Interval operator==(const algebra::Inequation& lhs, const double rhs) { return lhs == algebra::SimplePolynomial(rhs); }
 
-inline algebra::Interval operator<(const algebra::Fraction& lhs, const algebra::Inequation& rhs) { return rhs > lhs; }
+inline algebra::Interval operator<(const double lhs, const algebra::Inequation& rhs) { return rhs > lhs; }
 
-inline algebra::Interval operator<=(const algebra::Fraction& lhs, const algebra::Inequation& rhs) { return rhs >= lhs; }
+inline algebra::Interval operator<=(const double lhs, const algebra::Inequation& rhs) { return rhs >= lhs; }
 
-inline algebra::Interval operator>(const algebra::Fraction& lhs, const algebra::Inequation& rhs) { return rhs < lhs; }
+inline algebra::Interval operator>(const double lhs, const algebra::Inequation& rhs) { return rhs < lhs; }
 
-inline algebra::Interval operator>=(const algebra::Fraction& lhs, const algebra::Inequation& rhs) { return rhs <= lhs; }
+inline algebra::Interval operator>=(const double lhs, const algebra::Inequation& rhs) { return rhs <= lhs; }
 
-inline algebra::Interval operator==(const algebra::Fraction& lhs, const algebra::Inequation& rhs) { return rhs == lhs; }
+inline algebra::Interval operator==(const double lhs, const algebra::Inequation& rhs) { return rhs == lhs; }
 
 inline algebra::Interval operator<(const algebra::Inequation& lhs, const algebra::Variable& rhs) { return lhs < algebra::SimplePolynomial(rhs); }
 

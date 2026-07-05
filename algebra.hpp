@@ -1,9 +1,4 @@
 #pragma once
-#include <algorithm>
-#include <assert.h>
-#include <boost/multiprecision/cpp_int.hpp>
-#include <cmath>
-#include <complex>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -12,20 +7,10 @@
 #include <pybind11/embed.h>
 #include <pybind11/stl.h>
 #include <ranges>
-#include <utility>
 #include <vector>
 
 namespace algebra {
     enum class RelationalOperator : uint8_t { LT, LE, GT, GE, EQ, NE };
-
-    class BigInt;
-    std::ostream& operator<<(std::ostream&, const BigInt&);
-
-    class Fraction;
-    std::ostream& operator<<(std::ostream&, const Fraction&);
-
-    class Complex;
-    std::ostream& operator<<(std::ostream&, const Complex&);
 
     class Variable;
     std::ostream& operator<<(std::ostream&, const Variable&);
@@ -71,11 +56,11 @@ namespace algebra {
         std::string to_latex(RelationalOperator);
         std::string to_html(RelationalOperator);
         RelationalOperator invert_relational_operator(RelationalOperator);
-        bool evaluate_relational_operator(const Fraction&, RelationalOperator, const Fraction&);
+        bool evaluate_relational_operator(double, RelationalOperator, double);
         std::vector<std::vector<int>> generate_combinations(int, int);
 
         template <typename T, typename U, typename V>
-        void print_substitute(const T&, const std::map<U, Fraction>&, const V&);
+        void print_substitute(const T&, const std::map<U, double>&, const V&);
         template <typename T, typename U, typename V>
         void print_differentiate(const T&, const U&, const V&);
         template <typename T, typename U, typename V, typename W>
@@ -88,10 +73,8 @@ namespace algebra {
     using RationalExpression = detail::AlgebraicContainer<Function>;
 
     namespace detail {
+        static constexpr char FORMAT[] = "{:.3g}";
         enum class SerialClass : uint8_t {
-            BIG_INT,
-            FRACTION,
-            COMPLEX,
             VARIABLE,
             FUNCTION,
             INEQUATION,
@@ -107,9 +90,6 @@ namespace algebra {
 } // namespace algebra
 
 #include "utils/detail.hpp"
-#include "src/big_int.hpp"
-#include "src/fraction.hpp"
-#include "src/complex.hpp"
 #include "src/variable.hpp"
 #include "utils/algebraic_expression.hpp"
 #include "utils/algebraic_container.hpp"
