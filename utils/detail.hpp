@@ -12,6 +12,10 @@ namespace algebra {
 
             LaTeX(const std::string& latex) : latex(latex) {}
 
+            template <typename T>
+                requires(!std::is_same_v<T, double> && !std::is_same_v<T, std::string> && requires(const T& obj) { obj.to_latex(); })
+            LaTeX(const T& obj) : latex((obj.to_latex())) {}
+
             const std::string& to_latex() const { return latex; }
         };
 
@@ -25,13 +29,17 @@ namespace algebra {
 
             HTML(const std::string& html) : html(html) {}
 
+            template <typename T>
+                requires(!std::is_same_v<T, double> && !std::is_same_v<T, std::string> && requires(const T& obj) { obj.to_html(); })
+            HTML(const T& obj) : html((obj.to_html())) {}
+
             const std::string& to_html() const { return html; }
         };
 
         inline std::ostream& operator<<(std::ostream& out, const HTML& html) { return out << html.to_html(); }
 
         struct FormatSettings {
-            enum class Output { CONSOLE, FILE, LATEX, HTML, MANIM } output = Output::CONSOLE;
+            enum class Output { CONSOLE, FILE, LATEX, SVG, HTML, MANIM } output = Output::CONSOLE;
             enum class Quality { LOW_480P15, MEDIUM_720P30, HIGH_1080P60, PRODUCTION_1440P60, UHD_2160P60 } quality = Quality::LOW_480P15;
             bool was_math = false, verbose = true;
             std::ofstream file;
@@ -50,6 +58,11 @@ namespace algebra {
                 file << "\\documentclass{article}\n\\usepackage[fontsize=8.5pt]{fontsize}\n\\usepackage[top=0.5in, bottom=1in, left=0.5in, "
                         "right=0.5in]{geometry}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{"
                         "document}\n";
+            }
+
+            void toggle_svg(const std::string& name = "output") {
+                toggle_latex(name);
+                output = Output::SVG;
             }
 
             void toggle_html(const std::string& name = "output") {
@@ -87,6 +100,7 @@ namespace algebra {
                         break;
 
                     case Output::LATEX:
+                    case Output::SVG:
                         if constexpr (requires(const T& obj) { obj.to_latex(); }) {
                             fmt.file << "\\begin{align*}\n" << object.to_latex() << "\\end{align*}\n";
                             fmt.was_math = true;
@@ -110,7 +124,8 @@ namespace algebra {
                         if constexpr (requires(const T& obj) { obj.to_latex(); }) {
                             fmt.file << "MathTex(r'''" << object.to_latex()
                                      << "''').scale(0.5).next_to(prev, DOWN, buff=0.5).set_x(self.camera.frame.get_center()[0])\n"
-                                     << "\t\tself.play(self.camera.frame.animate.move_to(current))\n";
+                                     << "\t\tself.play(self.camera.frame.animate.move_to([self.camera.frame.get_center()[0], current.get_bottom()[1] "
+                                        "+ self.camera.frame.height / 2 - 1, 0]))\n";
                         } else {
                             fmt.file << "Text(r'''" << object
                                      << "''').scale(0.3).next_to(prev, DOWN, buff=0.5).align_to(self.camera.frame, LEFT).shift(RIGHT * 0.5)\n";
@@ -133,6 +148,7 @@ namespace algebra {
                         break;
 
                     case Output::LATEX:
+                    case Output::SVG:
                         if (!fmt.was_math) {
                             fmt.file << "\\\\\n";
                         }
@@ -159,21 +175,26 @@ namespace algebra {
                     break;
 
                 case Output::LATEX:
+                case Output::SVG:
                     {
                         file << "\\end{document}\n";
                         file.close();
                         const std::string base = filename.substr(0, filename.size() - 4);
                         std::string command("pdflatex -interaction=nonstopmode ");
-                        system(command.append(filename)
-                                   .append(" > /dev/null 2>&1 && rm -f ")
-                                   .append(base)
-                                   .append(".log ")
-                                   .append(base)
-                                   .append(".aux ")
-                                   .append(base)
-                                   .append(".tex")
-                                   .c_str());
-                        filename = base + ".pdf";
+                        command.append(filename).append(" > /dev/null 2>&1");
+
+                        if (output == Output::SVG) {
+                            command.append(" && pdf2svg ").append(base).append(".pdf ").append(base).append(".svg");
+                        }
+                        command.append(" && rm -f ").append(base).append(".log ").append(base).append(".aux ").append(base).append(".tex");
+
+                        if (output == Output::LATEX) {
+                            filename = base + ".pdf";
+                        } else {
+                            command.append(" ").append(base).append(".pdf");
+                            filename = base + ".svg";
+                        }
+                        system(command.c_str());
                         std::filesystem::rename(filename, "outputs/" + filename);
                         break;
                     }
@@ -325,37 +346,38 @@ namespace algebra {
 
                 switch (GLOBAL_FORMATTING.output) {
                 case FormatSettings::Output::LATEX:
+                case FormatSettings::Output::SVG:
                 case FormatSettings::Output::MANIM:
                     str = "\\left.";
-                    str.append(initial.to_latex()).append("\\right|_{");
+                    str.append(LaTeX(initial).to_latex()).append("\\right|_{");
 
                     for (const auto& [variable, value] : values) {
-                        str.append(variable.to_latex()).append("=").append(LaTeX(value).to_latex()).push_back(',');
+                        str.append(LaTeX(variable).to_latex()).append("=").append(LaTeX(value).to_latex()).push_back(',');
                     }
                     str.pop_back();
-                    GLOBAL_FORMATTING << LaTeX(str.append("}=").append(final.to_latex()));
+                    GLOBAL_FORMATTING << LaTeX(str.append("}=").append(LaTeX(final).to_latex()));
 
                     break;
 
                 case FormatSettings::Output::HTML:
-                    str.append(initial.to_html())
+                    str.append(HTML(initial).to_html())
                         .append("<msub><mo>|</mo><mrow>")
-                        .append(values.begin()->first.to_html())
+                        .append(HTML(values.begin()->first).to_html())
                         .append("<mo>=</mo>")
                         .append(HTML(values.begin()->second).to_html());
 
                     for (const auto& [variable, value] : values | std::views::drop(1)) {
                         str.append("<mo>,</mo><mspace width='5px'/>").append(variable.to_html()).append("<mo>=</mo>").append(HTML(value).to_html());
                     }
-                    GLOBAL_FORMATTING << HTML(str.append("</mrow></msub><mo>=</mo>").append(final.to_html()));
+                    GLOBAL_FORMATTING << HTML(str.append("</mrow></msub><mo>=</mo>").append(HTML(final).to_html()));
                     break;
 
                 case FormatSettings::Output::FILE:
                 case FormatSettings::Output::CONSOLE:
                     GLOBAL_FORMATTING << initial << "|(" << values.begin()->first << '=' << values.begin()->second;
 
-                    for (const auto& [variable, fraction] : values | std::views::drop(1)) {
-                        GLOBAL_FORMATTING << ", " << variable << '=' << fraction;
+                    for (const auto& [variable, value] : values | std::views::drop(1)) {
+                        GLOBAL_FORMATTING << ", " << variable << '=' << value;
                     }
                     GLOBAL_FORMATTING << ") = " << final << std::endl;
                 }
@@ -366,17 +388,23 @@ namespace algebra {
         void print_differentiate(const T& initial, const U& wrt, const V& final) {
             switch (GLOBAL_FORMATTING.output) {
             case FormatSettings::Output::LATEX:
+            case FormatSettings::Output::SVG:
             case FormatSettings::Output::MANIM:
-                GLOBAL_FORMATTING << LaTeX(
-                    std::string("\\dfrac{d}{d").append(wrt.to_latex()).append("}").append(initial.to_latex()).append("=").append(final.to_latex()));
+                GLOBAL_FORMATTING << LaTeX(std::string("\\dfrac{d}{d")
+                                               .append(LaTeX(wrt).to_latex())
+                                               .append("}")
+                                               .append(LaTeX(initial).to_latex())
+                                               .append("=")
+                                               .append(LaTeX(final).to_latex()));
                 break;
 
             case FormatSettings::Output::HTML:
                 GLOBAL_FORMATTING << HTML(std::string("<mfrac><mi>d</mi><mrow><mi>d</mi><mrow>")
-                                              .append(wrt.to_html().append("</mrow></mrow></mfrac><mrow>"))
-                                              .append(initial.to_html())
+                                              .append(HTML(wrt).to_html())
+                                              .append("</mrow></mrow></mfrac><mrow>")
+                                              .append(HTML(initial).to_html())
                                               .append("</mrow><mo>=</mo><mrow>")
-                                              .append(final.to_html())
+                                              .append(HTML(final).to_html())
                                               .append("</mrow>"));
                 break;
 
@@ -390,17 +418,18 @@ namespace algebra {
         void print_integrate(const T& initial, const U& a, const U& b, const V& wrt, const W& final) {
             switch (GLOBAL_FORMATTING.output) {
             case FormatSettings::Output::LATEX:
+            case FormatSettings::Output::SVG:
             case FormatSettings::Output::MANIM:
                 GLOBAL_FORMATTING << LaTeX(std::string("\\int_{")
                                                .append(LaTeX(a).to_latex())
                                                .append("}^{")
                                                .append(LaTeX(b).to_latex())
                                                .append("}")
-                                               .append(initial.to_latex())
+                                               .append(LaTeX(initial).to_latex())
                                                .append("d")
-                                               .append(wrt.to_latex())
+                                               .append(LaTeX(wrt).to_latex())
                                                .append("=")
-                                               .append(final.to_latex()));
+                                               .append(LaTeX(final).to_latex()));
                 break;
 
             case FormatSettings::Output::HTML:
@@ -408,11 +437,11 @@ namespace algebra {
                                               .append(HTML(a).to_html())
                                               .append(HTML(b).to_html())
                                               .append("</msubsup>")
-                                              .append(initial.to_html())
+                                              .append(HTML(initial).to_html())
                                               .append("<mspace width='5px'/><mi>d</mi>")
-                                              .append(wrt.to_html())
+                                              .append(HTML(wrt).to_html())
                                               .append("<mo>=</mo>")
-                                              .append(final.to_html()));
+                                              .append(HTML(final).to_html()));
                 break;
 
             case FormatSettings::Output::FILE:

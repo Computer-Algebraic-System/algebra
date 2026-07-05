@@ -5,8 +5,9 @@ using namespace algebra;
 int main() {
     // GLOBAL_FORMATTING.toggle_file();
     // GLOBAL_FORMATTING.toggle_latex();
+    // GLOBAL_FORMATTING.toggle_svg();
     // GLOBAL_FORMATTING.toggle_html();
-    // GLOBAL_FORMATTING.toggle_manim();
+    GLOBAL_FORMATTING.toggle_manim();
     detail::FormatSettings& out = GLOBAL_FORMATTING;
     Variable x("x"), y("y"), z("z");
     const Variable v = 2 * (Variable("x") ^ 2) * (Variable("y") ^ 3);
