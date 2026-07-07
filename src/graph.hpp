@@ -94,7 +94,6 @@ public:
 
         switch (GLOBAL_FORMATTING.output) {
         case detail::FormatSettings::Output::LATEX:
-        case detail::FormatSettings::Output::SVG:
             str.append("\\begin{center}\n\\includegraphics[width=0.6\\textwidth]{").append(file_name).append("}\n\\end{center}\n");
             GLOBAL_FORMATTING << str;
             break;

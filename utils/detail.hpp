@@ -39,7 +39,7 @@ namespace algebra {
         inline std::ostream& operator<<(std::ostream& out, const HTML& html) { return out << html.to_html(); }
 
         struct FormatSettings {
-            enum class Output { CONSOLE, FILE, LATEX, SVG, HTML, MANIM } output = Output::CONSOLE;
+            enum class Output { CONSOLE, FILE, LATEX, HTML, MANIM } output = Output::CONSOLE;
             enum class Quality { LOW_480P15, MEDIUM_720P30, HIGH_1080P60, PRODUCTION_1440P60, UHD_2160P60 } quality = Quality::LOW_480P15;
             bool was_math = false, verbose = true;
             std::ofstream file;
@@ -58,11 +58,6 @@ namespace algebra {
                 file << "\\documentclass{article}\n\\usepackage[fontsize=8.5pt]{fontsize}\n\\usepackage[top=0.5in, bottom=1in, left=0.5in, "
                         "right=0.5in]{geometry}\n\\usepackage{amsmath}\n\\usepackage{graphicx}\n\\renewcommand{\\arraystretch}{1.5}\n\\begin{"
                         "document}\n";
-            }
-
-            void toggle_svg(const std::string& name = "output") {
-                toggle_latex(name);
-                output = Output::SVG;
             }
 
             void toggle_html(const std::string& name = "output") {
@@ -100,7 +95,6 @@ namespace algebra {
                         break;
 
                     case Output::LATEX:
-                    case Output::SVG:
                         if constexpr (requires(const T& obj) { obj.to_latex(); }) {
                             fmt.file << "\\begin{align*}\n" << object.to_latex() << "\\end{align*}\n";
                             fmt.was_math = true;
@@ -148,7 +142,6 @@ namespace algebra {
                         break;
 
                     case Output::LATEX:
-                    case Output::SVG:
                         if (!fmt.was_math) {
                             fmt.file << "\\\\\n";
                         }
@@ -175,25 +168,22 @@ namespace algebra {
                     break;
 
                 case Output::LATEX:
-                case Output::SVG:
                     {
                         file << "\\end{document}\n";
                         file.close();
                         const std::string base = filename.substr(0, filename.size() - 4);
                         std::string command("pdflatex -interaction=nonstopmode ");
-                        command.append(filename).append(" > /dev/null 2>&1");
+                        command.append(filename)
+                            .append(" > /dev/null 2>&1")
+                            .append(" && rm -f ")
+                            .append(base)
+                            .append(".log ")
+                            .append(base)
+                            .append(".aux ")
+                            .append(base)
+                            .append(".tex");
 
-                        if (output == Output::SVG) {
-                            command.append(" && pdf2svg ").append(base).append(".pdf ").append(base).append(".svg");
-                        }
-                        command.append(" && rm -f ").append(base).append(".log ").append(base).append(".aux ").append(base).append(".tex");
-
-                        if (output == Output::LATEX) {
-                            filename = base + ".pdf";
-                        } else {
-                            command.append(" ").append(base).append(".pdf");
-                            filename = base + ".svg";
-                        }
+                        filename = base + ".pdf";
                         system(command.c_str());
                         std::filesystem::rename(filename, "outputs/" + filename);
                         break;
@@ -346,7 +336,6 @@ namespace algebra {
 
                 switch (GLOBAL_FORMATTING.output) {
                 case FormatSettings::Output::LATEX:
-                case FormatSettings::Output::SVG:
                 case FormatSettings::Output::MANIM:
                     str = "\\left.";
                     str.append(LaTeX(initial).to_latex()).append("\\right|_{");
@@ -388,7 +377,6 @@ namespace algebra {
         void print_differentiate(const T& initial, const U& wrt, const V& final) {
             switch (GLOBAL_FORMATTING.output) {
             case FormatSettings::Output::LATEX:
-            case FormatSettings::Output::SVG:
             case FormatSettings::Output::MANIM:
                 GLOBAL_FORMATTING << LaTeX(std::string("\\dfrac{d}{d")
                                                .append(LaTeX(wrt).to_latex())
@@ -418,7 +406,6 @@ namespace algebra {
         void print_integrate(const T& initial, const U& a, const U& b, const V& wrt, const W& final) {
             switch (GLOBAL_FORMATTING.output) {
             case FormatSettings::Output::LATEX:
-            case FormatSettings::Output::SVG:
             case FormatSettings::Output::MANIM:
                 GLOBAL_FORMATTING << LaTeX(std::string("\\int_{")
                                                .append(LaTeX(a).to_latex())
